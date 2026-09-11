@@ -1,7 +1,7 @@
 # Storage Aggregator Platform — BRD & Architecture
 
-**Codename:** (TBD — usulan: "Unidrive" / "Vault" / "Yubistore")
-**Owner:** Nande (Yubiteck)
+**Codename:** PolyCloud
+**Owner:** Nan (ekaprasetya2244@gmail.com)
 **Status:** Draft v1
 **Scope:** Personal-first, designed to scale to self-hosted multi-user product.
 **Architecture locked:** Model A (index, whole-file) + Smart Routing, with a forward path to Model B (chunked).

@@ -67,3 +67,28 @@ dari banyak akun sekaligus; buat/rename/pindah folder = update DB murni (instan,
 data); folder kosong bisa ada. (−) bila user membuka provider langsung (di luar platform),
 file terlihat flat/tak terstruktur. Model 2 ditolak karena satu folder logis mustahil
 di-mirror utuh ketika isinya tersebar di banyak akun. Detail: [doc 09](09-virtual-filesystem.md).
+
+<a name="adr-010"></a>
+## ADR-010 — Provisioning akun: backend-managed OAuth (Opsi A)
+**Konteks:** User menambah akun lewat frontend, bukan `rclone config` terminal. Perlu
+jembatan antara OAuth di browser dan remote rclone. Dua opsi: (A) backend mengelola OAuth
+sendiri lalu inject token ke rclone; (B) delegasikan OAuth ke rclone via RC.
+**Keputusan:** Opsi A. Backend memegang OAuth app (client_id/secret platform), menukar code,
+menyimpan token (encrypted), lalu membuat remote rclone via `config/create` dengan token itu.
+**Konsekuensi:** (+) platform mengontrol penuh token & refresh, isolasi multi-user rapi
+(remote per-UUID), UX konsisten lintas provider. (+) rclone murni jadi eksekutor. (−) backend
+menanggung logika OAuth tiap provider + wajib sinkronkan token ke remote saat refresh
+(`config/update`). Detail: [doc 10](10-account-provisioning.md).
+
+<a name="adr-011"></a>
+## ADR-011 — rclone dijalankan sebagai daemon (rcd) yang terkunci ketat
+**Konteks:** Opsi A butuh memanggil rclone secara terprogram (`config/create`, operasi file).
+Mode CLI subprocess (dipakai spike) tak praktis untuk provisioning dinamis. rclone RC API
+sangat kuat & all-or-nothing: aksesnya = bisa jalankan perintah OS dan baca semua kredensial.
+**Keputusan:** Jalankan `rclone rcd` sebagai daemon internal; hanya backend yang memanggilnya.
+Ikat ketat: bind `127.0.0.1`, aktifkan auth, jangan expose port keluar host/pod, matikan
+fitur serve yang tak perlu.
+**Konsekuensi:** (+) provisioning & operasi terprogram, engine bisa pindah dari CLI ke RC
+tanpa ubah interface `Engine`. (−) daemon jadi komponen berhak-tinggi yang wajib diamankan;
+kompromi pada daemon = kompromi semua backend terkonfigurasi. Mitigasi = isolasi jaringan
+privat + auth. Detail: [doc 10 §6](10-account-provisioning.md).

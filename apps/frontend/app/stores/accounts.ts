@@ -10,7 +10,9 @@ export const useAccountsStore = defineStore('accounts', () => {
       id: 'acc-1',
       provider: 'gdrive',
       label: 'Google Drive Primary',
-      email: 'yubidev.work@gmail.com',
+      rclone_remote: 'acc_101:',
+      provisioning_type: 'oauth',
+      email: 'ekaprasetya2244@gmail.com',
       status: 'active',
       total_bytes: 15 * 1024 * 1024 * 1024, // 15 GB
       used_bytes: 12.4 * 1024 * 1024 * 1024, // 12.4 GB
@@ -21,6 +23,8 @@ export const useAccountsStore = defineStore('accounts', () => {
       id: 'acc-2',
       provider: 'onedrive',
       label: 'OneDrive Business',
+      rclone_remote: 'acc_102:',
+      provisioning_type: 'oauth',
       email: 'alex@enterprise-cloud.io',
       status: 'active',
       total_bytes: 100 * 1024 * 1024 * 1024, // 100 GB
@@ -32,6 +36,8 @@ export const useAccountsStore = defineStore('accounts', () => {
       id: 'acc-3',
       provider: 'dropbox',
       label: 'Dropbox Team Share',
+      rclone_remote: 'acc_103:',
+      provisioning_type: 'oauth',
       email: 'admin@polycloud.dev',
       status: 'active',
       total_bytes: 20 * 1024 * 1024 * 1024, // 20 GB
@@ -43,6 +49,8 @@ export const useAccountsStore = defineStore('accounts', () => {
       id: 'acc-4',
       provider: 's3',
       label: 'AWS S3 Cold Bucket (us-east-1)',
+      rclone_remote: 'acc_104:',
+      provisioning_type: 'credentials',
       email: 'arn:aws:s3:::poly-archive-vault',
       status: 'active',
       total_bytes: 500 * 1024 * 1024 * 1024, // 500 GB
@@ -54,6 +62,8 @@ export const useAccountsStore = defineStore('accounts', () => {
       id: 'acc-5',
       provider: 'r2',
       label: 'Cloudflare R2 Media Hot',
+      rclone_remote: 'acc_105:',
+      provisioning_type: 'credentials',
       email: 'assets-bucket@cf-edge.net',
       status: 'needs_reconnect',
       total_bytes: 50 * 1024 * 1024 * 1024, // 50 GB
@@ -118,12 +128,25 @@ export const useAccountsStore = defineStore('accounts', () => {
     }
   }
 
-  function addAccount(data: { provider: StorageProvider; label: string; email?: string; total_bytes?: number }) {
+  function addAccount(data: {
+    provider: StorageProvider
+    label: string
+    email?: string
+    total_bytes?: number
+    rclone_remote?: string
+    provisioning_type?: 'oauth' | 'credentials'
+  }) {
+    const rawId = Math.random().toString(36).substring(2, 9)
+    const id = 'acc-' + rawId
+    const isOAuth = ['gdrive', 'onedrive', 'dropbox'].includes(data.provider)
+
     const newAcc: Account = {
-      id: 'acc-' + Math.random().toString(36).substring(2, 9),
+      id,
       provider: data.provider,
       label: data.label,
-      email: data.email || 'connected-user@storage.cloud',
+      rclone_remote: data.rclone_remote || `acc_${rawId}:`,
+      provisioning_type: data.provisioning_type || (isOAuth ? 'oauth' : 'credentials'),
+      email: data.email || (isOAuth ? 'ekaprasetya2244@gmail.com' : `${data.provider}-bucket`),
       status: 'active',
       total_bytes: data.total_bytes || 25 * 1024 * 1024 * 1024,
       used_bytes: 0,

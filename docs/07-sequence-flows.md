@@ -1,36 +1,40 @@
 # 07 — Sequence Flows
 
-## 1. Connect Account (OAuth)
+## 1. Connect Account (OAuth) — Backend-managed (Opsi A)
+Backend mengelola OAuth (pakai client_id/secret platform), lalu inject token ke rclone
+daemon via `config/create`. Detail: [doc 10](10-account-provisioning.md).
 ```mermaid
 sequenceDiagram
     participant U as User
     participant FE as Frontend
     participant BE as Backend
-    participant EN as Engine (rclone)
     participant P as Provider
+    participant RD as rclone daemon (rcd)
     participant DB as Postgres
 
-    U->>FE: klik "Tambah Account" (pilih provider)
+    U->>FE: klik "Tambah Akun" (pilih provider)
     FE->>BE: POST /accounts/connect {provider,label}
-    BE->>EN: minta auth URL (OAuth)
-    EN-->>BE: auth_url
+    BE->>BE: bangun auth_url (client_id platform, scope, state)
     BE-->>FE: {auth_url}
     FE->>P: redirect ke consent
     U->>P: login + consent
-    P-->>FE: redirect callback ?code
+    P-->>FE: redirect callback ?code&state
     FE->>BE: POST /accounts/callback {code,state}
-    BE->>EN: tukar code -> token
-    EN->>P: exchange
-    P-->>EN: access+refresh token
-    EN-->>BE: token
+    BE->>BE: validasi state
+    BE->>P: tukar code -> token (client_secret platform)
+    P-->>BE: access + refresh token
     BE->>DB: simpan account + token (AES-GCM)
+    BE->>RD: config/create acc_<uuid> {type, token, client_id, client_secret}
+    RD-->>BE: ok (remote siap)
     BE-->>FE: {account_id, status:active}
-    BE->>EN: initial sync (List)
-    EN->>P: list files
-    P-->>EN: metadata
-    EN-->>BE: entries
+    BE->>RD: initial sync (List acc_<uuid>:)
+    RD->>P: list files
+    P-->>RD: metadata
+    RD-->>BE: entries
     BE->>DB: tulis files_index + file_blocks
 ```
+> Provider non-OAuth (S3/B2): langkah redirect diganti form input key; sisanya
+> (simpan + config/create + sync) sama.
 
 ## 2. Upload + Smart Routing (Model A)
 ```mermaid

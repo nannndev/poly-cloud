@@ -4,6 +4,7 @@ export interface Account {
   id: string
   provider: string
   label: string
+  rclone_remote?: string
   status: AccountStatus
   total_bytes: number | null
   used_bytes: number | null
@@ -11,9 +12,19 @@ export interface Account {
   last_synced: string | null
 }
 
+export interface FolderEntry {
+  id: string
+  name: string
+  path: string
+  parent_id: string | null
+  created_at?: string
+}
+
 export interface FileEntry {
   id: string
   name: string
+  folder_id?: string | null
+  virtual_path?: string
   mime: string | null
   size_bytes: number
   modified_at: string | null

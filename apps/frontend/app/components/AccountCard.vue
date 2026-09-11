@@ -33,6 +33,11 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
       onSelect: () => accountsStore.syncAccount(props.account.id)
     },
     {
+      label: 'Copy rclone Remote Name',
+      icon: 'i-lucide-terminal',
+      onSelect: () => navigator.clipboard?.writeText(props.account.rclone_remote || `acc_${props.account.id.replace('acc-', '')}:`)
+    },
+    {
       label: 'Copy Account ID',
       icon: 'i-lucide-copy',
       onSelect: () => navigator.clipboard?.writeText(props.account.id)
@@ -72,9 +77,18 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             <h3 class="font-semibold text-sm text-zinc-100 truncate group-hover:text-emerald-400 transition-colors">
               {{ account.label }}
             </h3>
-            <p class="text-[11px] text-zinc-500 truncate mt-0.5 font-mono">
-              {{ account.email || providerMeta.name }}
-            </p>
+            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span class="text-[11px] text-zinc-500 truncate font-mono">
+                {{ account.email || providerMeta.name }}
+              </span>
+              <span
+                v-if="account.rclone_remote"
+                class="text-[9px] px-1.5 py-0.5 rounded-md bg-zinc-900 border border-white/[0.08] text-emerald-400 font-mono"
+                title="Internal rclone daemon remote"
+              >
+                {{ account.rclone_remote }}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -27,14 +27,24 @@ const { formatBytes } = useFormatters()
           </template>
 
           <template #right>
-            <UButton
-              label="Upload File"
-              icon="i-lucide-upload-cloud"
-              color="emerald"
-              variant="solid"
-              class="rounded-xl font-bold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 transition-all cursor-pointer"
-              @click="filesStore.isUploadModalOpen = true"
-            />
+            <div class="flex items-center gap-2">
+              <UButton
+                label="New Folder"
+                icon="i-lucide-folder-plus"
+                color="neutral"
+                variant="outline"
+                class="rounded-xl font-medium shadow-xs text-zinc-300 hover:text-white border-white/[0.08] hover:bg-white/[0.05] px-3 transition-all cursor-pointer"
+                @click="filesStore.isNewFolderModalOpen = true"
+              />
+              <UButton
+                label="Upload File"
+                icon="i-lucide-upload-cloud"
+                color="emerald"
+                variant="solid"
+                class="rounded-xl font-bold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 transition-all cursor-pointer"
+                @click="filesStore.isUploadModalOpen = true"
+              />
+            </div>
           </template>
         </UDashboardNavbar>
       </template>
@@ -71,12 +81,12 @@ const { formatBytes } = useFormatters()
               </div>
             </div>
 
-            <!-- Metric 2: Total Files Indexed -->
+            <!-- Metric 2: Total Items Indexed (VFS) -->
             <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#121215] hover:border-emerald-500/30 hover:bg-[#141418] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
               <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Indexed Files</span>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">VFS Indexed Items</span>
                 <div class="p-2 rounded-xl bg-zinc-800/80 text-zinc-300 border border-white/[0.06] group-hover:scale-105 transition-transform">
-                  <UIcon name="i-lucide-files" class="size-4" />
+                  <UIcon name="i-lucide-folder-tree" class="size-4 text-emerald-400" />
                 </div>
               </div>
               <div>
@@ -84,16 +94,18 @@ const { formatBytes } = useFormatters()
                   <span class="text-2xl font-black text-white font-mono tracking-tight">
                     {{ filesStore.files.length }}
                   </span>
-                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-medium text-[10px] border border-emerald-500/20">
-                    <span class="size-1.5 rounded-full bg-emerald-400" />
-                    Live Sync
+                  <span class="text-xs text-zinc-400 font-mono">files</span>
+                  <span class="text-zinc-600">•</span>
+                  <span class="text-lg font-bold text-zinc-300 font-mono">
+                    {{ filesStore.folders.length }}
                   </span>
+                  <span class="text-xs text-zinc-400 font-mono">folders</span>
                 </div>
-                <p class="text-[11px] text-zinc-400 mt-0.5">Active files across all providers</p>
+                <p class="text-[11px] text-zinc-400 mt-0.5">Unified virtual hierarchy in platform DB</p>
               </div>
               <div class="p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] flex items-center justify-between text-[11px]">
                 <span class="text-zinc-400 font-medium">Query Latency</span>
-                <span class="font-mono text-zinc-300 font-medium">&lt; 15ms</span>
+                <span class="font-mono text-emerald-400 font-medium">&lt; 12ms</span>
               </div>
             </div>
 

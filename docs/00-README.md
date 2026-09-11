@@ -21,6 +21,7 @@ S3, Backblaze B2, dll) dan menampilkannya sebagai satu ruang penyimpanan terpadu
 | 07 | [Sequence Flows](07-sequence-flows.md) | Diagram: OAuth connect, upload+routing, download, refresh |
 | 08 | [ADR](08-adr.md) | Architecture Decision Records |
 | 09 | [Virtual Filesystem](09-virtual-filesystem.md) | Folder virtual: organisasi terpisah dari lokasi fisik |
+| 10 | [Account Provisioning](10-account-provisioning.md) | Tambah akun dari UI: OAuth backend → inject ke rclone |
 
 ## Glosarium Singkat
 - **Provider** — layanan cloud (GDrive, Dropbox, …).

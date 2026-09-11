@@ -7,7 +7,23 @@ const { formatBytes } = useFormatters()
 
 const isDragging = ref(false)
 const selectedTarget = ref<string>('auto')
+const selectedFolderId = ref<string>(filesStore.currentFolderId || '__root__')
 const fileInput = ref<HTMLInputElement | null>(null)
+
+// Sync destination folder whenever modal opens
+watch(() => filesStore.isUploadModalOpen, (isOpen) => {
+  if (isOpen) {
+    selectedFolderId.value = filesStore.currentFolderId || '__root__'
+  }
+})
+
+// Hierarchical folder options
+const folderOptions = computed(() => {
+  return filesStore.allFoldersHierarchical.map(f => ({
+    value: f.id === null ? '__root__' : f.id,
+    label: f.id === null ? '📁 Root (/)' : `${'  '.repeat(f.depth)}📁 ${f.name} (${f.path})`
+  }))
+})
 
 // Smart routing recommendation (account with most free bytes)
 const recommendedAccount = computed(() => {
@@ -147,11 +163,17 @@ function processFiles(fileList: File[]) {
     }
   }
 
+  const folderId = selectedFolderId.value === '__root__' ? null : selectedFolderId.value
+  const folderObj = folderId ? filesStore.folders.find(f => f.id === folderId) : null
+  const folderPath = folderObj ? folderObj.path : '/'
+
   for (const f of fileList) {
     filesStore.simulateUpload({
       name: f.name,
       size: f.size || 2400000,
-      targetAccount: targetAcc
+      targetAccount: targetAcc,
+      targetFolderId: folderId,
+      targetFolderPath: folderPath
     })
   }
 }
@@ -173,10 +195,16 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
     }
   }
 
+  const folderId = selectedFolderId.value === '__root__' ? null : selectedFolderId.value
+  const folderObj = folderId ? filesStore.folders.find(f => f.id === folderId) : null
+  const folderPath = folderObj ? folderObj.path : '/'
+
   filesStore.simulateUpload({
     name,
     size: sizeBytes,
-    targetAccount: targetAcc
+    targetAccount: targetAcc,
+    targetFolderId: folderId,
+    targetFolderPath: folderPath
   })
 }
 </script>
@@ -220,22 +248,43 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
 
     <template #body>
       <div class="space-y-5">
-        <!-- Target Placement Option Selector -->
-        <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-2">
-          <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
-            <span class="flex items-center gap-2">
-              <UIcon name="i-lucide-route" class="size-4 text-emerald-400" />
-              Target Storage Placement Policy
-            </span>
-            <span class="text-[11px] text-zinc-500 font-normal">Can be manually overridden</span>
+        <!-- Dual Target Placement Config: Virtual Folder vs Cloud Provider -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Placement 1: Virtual Folder Destination -->
+          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
+              <span class="flex items-center gap-2">
+                <UIcon name="i-lucide-folder" class="size-4 text-amber-400" />
+                Virtual Folder (VFS)
+              </span>
+              <span class="text-[10px] text-zinc-400 font-mono">Organization</span>
+            </div>
+            <USelect
+              v-model="selectedFolderId"
+              :items="folderOptions"
+              class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
+              icon="i-lucide-folder-open"
+              size="md"
+            />
           </div>
-          <USelect
-            v-model="selectedTarget"
-            :items="targetAccountOptions"
-            class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
-            icon="i-lucide-layers-3"
-            size="md"
-          />
+
+          <!-- Placement 2: Physical Cloud Storage Target -->
+          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
+              <span class="flex items-center gap-2">
+                <UIcon name="i-lucide-route" class="size-4 text-emerald-400" />
+                Cloud Target (Smart Routing)
+              </span>
+              <span class="text-[10px] text-zinc-400 font-mono">Physical</span>
+            </div>
+            <USelect
+              v-model="selectedTarget"
+              :items="targetAccountOptions"
+              class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
+              icon="i-lucide-layers-3"
+              size="md"
+            />
+          </div>
         </div>
 
         <!-- Animated Drag & Drop Zone -->
@@ -407,6 +456,13 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
                         <span class="text-zinc-600">•</span>
                         <span class="font-mono text-[10px] text-emerald-400">{{ job.speed_mbps }} MB/s</span>
                       </template>
+
+                      <!-- VFS Folder Destination -->
+                      <span class="text-zinc-600 hidden sm:inline">•</span>
+                      <span class="text-[11px] text-zinc-400 hidden sm:inline-flex items-center gap-1 font-mono">
+                        <UIcon name="i-lucide-folder" class="size-3 text-amber-400" />
+                        <span class="text-zinc-300">{{ job.target_folder_path || '/' }}</span>
+                      </span>
 
                       <!-- Cloud Target Pill -->
                       <span class="text-zinc-600 hidden sm:inline">•</span>

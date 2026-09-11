@@ -12,10 +12,10 @@ const items = computed<DropdownMenuItem[][]>(() => [
   [
     {
       type: 'label',
-      label: 'Admin Workspace',
+      label: 'Nan',
       avatar: {
         src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-        alt: 'Yubidev Admin'
+        alt: 'Nan'
       }
     }
   ],
@@ -79,11 +79,11 @@ const items = computed<DropdownMenuItem[][]>(() => [
       <div v-if="!collapsed" class="min-w-0 flex-1 leading-tight space-y-0.5">
         <div class="flex items-center gap-1.5">
           <p class="font-bold text-xs text-highlight truncate">
-            Yubidev Admin
+            Nan
           </p>
         </div>
-        <p class="text-[10px] text-muted truncate">
-          {{ accountsStore.activeAccounts.length }} Active Cloud Drives
+        <p class="text-[10px] text-muted truncate" title="ekaprasetya2244@gmail.com">
+          ekaprasetya2244@gmail.com
         </p>
       </div>
 

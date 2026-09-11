@@ -31,6 +31,11 @@ Yang dipakai di-inject saat startup — mengganti model = mengganti implementasi
 ## 3. Engine Adapter
 ```go
 type Engine interface {
+    // Provisioning remote (Opsi A — lihat doc 10)
+    CreateRemote(ctx context.Context, name, rType string, params map[string]any) error
+    UpdateRemote(ctx context.Context, name string, params map[string]any) error // refresh token
+    DeleteRemote(ctx context.Context, name string) error
+    // Operasi file
     ListRemotes(ctx context.Context) ([]string, error)
     List(ctx context.Context, remote, path string) ([]FileEntry, error)
     About(ctx context.Context, remote string) (Quota, error)
@@ -40,8 +45,13 @@ type Engine interface {
     Delete(ctx context.Context, remote, path string) error
 }
 ```
-Impl v1 = `RcloneEngine` (subprocess). Membungkus rclone di balik interface memungkinkan
-ganti ke library mode atau engine lain tanpa menyentuh service.
+Impl produksi = `RcloneDaemonEngine` yang bicara ke **`rclone rcd`** (RC API) — ini yang
+memungkinkan provisioning remote dinamis (`config/create`) dari OAuth backend. Daemon wajib
+dikunci ketat (localhost + auth, tak expose keluar) — lihat [ADR-011](08-adr.md#adr-011)
+& [doc 10 §6](10-account-provisioning.md).
+
+> Catatan: spike fase 0 memakai `RcloneEngine` (CLI subprocess) hanya untuk PoC. Interface
+> `Engine` sama, jadi pindah CLI → daemon tak menyentuh StorageService.
 
 ## 4. Smart Routing
 ```go
@@ -55,8 +65,12 @@ func (r *Router) Pick(ctx, accounts []Account, size int64) (*Account, error)
 
 ## 5. Token Lifecycle
 - Simpan `access` + `refresh` token **terenkripsi** (AES-GCM) di `account_tokens`, terpisah dari `accounts`.
-- Sebelum operasi: cek `expires_at`; jika lewat → refresh via engine → simpan ulang.
+- Backend (bukan rclone) yang berwenang refresh — token milik platform (Opsi A).
+- Sebelum operasi: cek `expires_at`; jika lewat → backend refresh via endpoint provider →
+  simpan ulang ke DB **dan** `Engine.UpdateRemote` agar rclone tak memakai token basi.
 - Refresh gagal permanen → set account `status = needs_reconnect`; UI minta re-auth.
+- Provisioning saat connect: `Engine.CreateRemote(acc_<uuid>, type, {token, client_id, client_secret})`.
+  Lihat [doc 10](10-account-provisioning.md).
 
 ## 6. Sinkronisasi Index
 - **Initial sync** saat connect: walk isi account → tulis `files_index` + `file_blocks`.

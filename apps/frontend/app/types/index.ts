@@ -6,6 +6,8 @@ export interface Account {
   id: string
   provider: StorageProvider
   label: string
+  rclone_remote?: string
+  provisioning_type?: 'oauth' | 'credentials'
   status: AccountStatus
   total_bytes: number
   used_bytes: number
@@ -14,10 +16,21 @@ export interface Account {
   email?: string
 }
 
+export interface FolderEntry {
+  id: string
+  parent_id: string | null
+  name: string
+  path: string
+  created_at: string
+  item_count?: number
+}
+
 export interface FileEntry {
   id: string
   name: string
   path: string
+  folder_id?: string | null
+  virtual_path?: string
   mime: string | null
   size_bytes: number
   modified_at: string
@@ -57,7 +70,10 @@ export interface UploadJob {
   target_account_id?: string
   target_account_label?: string
   target_provider?: StorageProvider
+  target_folder_id?: string | null
+  target_folder_path?: string
   routing_strategy?: string
   speed_mbps?: number
   error_message?: string
 }
+
