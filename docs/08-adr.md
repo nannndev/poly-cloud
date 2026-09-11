@@ -54,3 +54,16 @@ bergantung ketersediaan & bandwidth provider saat itu.
 **Keputusan:** Default "most-free" (isi account terlowong dulu). Strategi pluggable.
 **Konsekuensi:** (+) distribusi merata, sederhana, deterministik. (−) bisa suboptimal
 untuk kasus khusus (mis. ingin kelompokkan tipe file) → tersedia strategi alternatif.
+
+## ADR-009 — Virtual Filesystem murni (bukan mirror provider)
+**Konteks:** File user tersebar di banyak akun, tapi user butuh organisasi (folder) yang rapi.
+Dua opsi: (1) struktur folder hanya di DB platform (virtual path murni), atau (2) mirror
+struktur folder ke provider aslinya.
+**Keputusan:** Pakai Model 1 — virtual filesystem murni. Folder hidup di tabel `folders`
+di DB; file fisik ditaruh flat di satu folder khusus (mis. `PolyCloud/`) per akun.
+Struktur folder tak pernah dibuat di provider.
+**Konsekuensi:** (+) organisasi tak dibatasi lokasi fisik — folder logis bisa berisi file
+dari banyak akun sekaligus; buat/rename/pindah folder = update DB murni (instan, tak transfer
+data); folder kosong bisa ada. (−) bila user membuka provider langsung (di luar platform),
+file terlihat flat/tak terstruktur. Model 2 ditolak karena satu folder logis mustahil
+di-mirror utuh ketika isinya tersebar di banyak akun. Detail: [doc 09](09-virtual-filesystem.md).

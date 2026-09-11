@@ -1,0 +1,79 @@
+# ==========================================
+# Poly Cloud - Git Ignore Rules
+# ==========================================
+
+# --- Operating System & Editor Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.fleet/
+.history
+
+# Agent scratch & local tools
+.agents/
+
+# --- Environment Variables & Sensitive Credentials ---
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.crt
+*.pfx
+credentials.json
+client_secret*.json
+token.json
+service-account*.json
+rclone.conf
+
+# --- Node / Frontend (Nuxt 4, Vite, Nitro) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Nuxt & Vite build outputs
+.nuxt/
+.output/
+.nitro/
+.cache/
+.data/
+dist/
+dist-ssr/
+*.local
+
+# --- Go / Backend Binaries & Artifacts ---
+/bin/
+apps/backend/bin/
+apps/backend/api
+apps/backend/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+cover.out
+
+# --- Docker & Database Local Mounts ---
+.docker-data/
+postgres-data/
+minio-data/
+local-storage/
+*.log
+logs/

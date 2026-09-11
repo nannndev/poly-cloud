@@ -20,6 +20,7 @@ S3, Backblaze B2, dll) dan menampilkannya sebagai satu ruang penyimpanan terpadu
 | 06 | [API Spec](06-api-spec.md) | Kontrak REST endpoint |
 | 07 | [Sequence Flows](07-sequence-flows.md) | Diagram: OAuth connect, upload+routing, download, refresh |
 | 08 | [ADR](08-adr.md) | Architecture Decision Records |
+| 09 | [Virtual Filesystem](09-virtual-filesystem.md) | Folder virtual: organisasi terpisah dari lokasi fisik |
 
 ## Glosarium Singkat
 - **Provider** — layanan cloud (GDrive, Dropbox, …).
@@ -30,6 +31,8 @@ S3, Backblaze B2, dll) dan menampilkannya sebagai satu ruang penyimpanan terpadu
 - **Model A** — 1 file = 1 objek di 1 account (whole-file).
 - **Model B** — 1 file = N chunk tersebar di N account (chunked, fase lanjut).
 - **Index** — metadata file yang di-cache di DB (bukan file-nya).
+- **VFS (Virtual Filesystem)** — struktur folder yang user lihat; hidup di DB platform, terpisah dari lokasi fisik di provider.
+- **Virtual path** — path folder logis (mis. `/Kerjaan/laporan.pdf`) yang tak tercermin di provider.
 
 ## Status
 Draft v1 — dokumen desain, mendahului implementasi.

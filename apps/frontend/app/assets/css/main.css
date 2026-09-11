@@ -1,0 +1,88 @@
+@import "tailwindcss" theme(static);
+@import "@nuxt/ui";
+
+@source "../**/*.{vue,js,ts}";
+
+@theme static {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root,
+.dark {
+  /* Elegant matte deep black (hitam doff pekat) with soft green accents */
+  --ui-bg: #09090b;
+  --ui-bg-muted: #0d0d10;
+  --ui-bg-elevated: #151518;
+  --ui-bg-accented: #1a1a1f;
+  --ui-bg-card: #111114;
+  --ui-border: rgba(255, 255, 255, 0.08);
+  --ui-border-accented: rgba(16, 185, 129, 0.35);
+  --ui-border-muted: rgba(255, 255, 255, 0.05);
+  --ui-text: #f4f4f5;
+  --ui-text-highlighted: #ffffff;
+  --ui-text-muted: #a1a1aa;
+  --ui-text-dimmed: #71717a;
+}
+
+/* Route transitions: fluid and ultra-smooth */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: opacity, transform;
+}
+
+.page-enter-from {
+  opacity: 0 !important;
+  transform: translateY(8px) !important;
+}
+
+.page-leave-to {
+  opacity: 0 !important;
+  transform: translateY(-6px) !important;
+}
+
+/* Glassmorphism & premium UI helpers */
+.glass-panel {
+  background: rgba(18, 18, 22, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Subtle soft glow utilities */
+.glow-soft-emerald {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.18);
+}
+
+/* Custom sleek scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(160, 160, 175, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 160, 175, 0.35);
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
