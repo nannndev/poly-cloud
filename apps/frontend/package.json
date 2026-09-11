@@ -1,0 +1,7 @@
+{
+  "name": "@polycloud/frontend",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "nuxt dev", "build": "nuxt build", "start": "node .output/server/index.mjs" },
+  "dependencies": { "nuxt": "^4.0.0", "vue": "^3.5.0", "pinia": "^3.0.0", "@pinia/nuxt": "^0.10.0" }
+}
