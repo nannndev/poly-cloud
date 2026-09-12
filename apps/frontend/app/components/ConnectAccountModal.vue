@@ -70,7 +70,7 @@ const providers: ProviderDefinition[] = [
   {
     id: 's3',
     name: 'AWS S3',
-    desc: 'S3 & kompatibel',
+    desc: 'S3 & compatible',
     icon: 'i-simple-icons-amazonwebservices',
     tag: 'Access Key',
     isOAuth: false,
@@ -88,7 +88,7 @@ const providers: ProviderDefinition[] = [
   {
     id: 'b2',
     name: 'Backblaze B2',
-    desc: 'Arsip murah',
+    desc: 'Low-cost archive',
     icon: 'i-simple-icons-backblaze',
     tag: 'App Key',
     isOAuth: false,
@@ -173,8 +173,8 @@ async function handleConnect() {
 
     const account = await accountsStore.connectWithKeys(selectedProvider.value, finalLabel, fields)
     toast.add({
-      title: 'Akun terhubung',
-      description: `${account.label} siap dipakai. Jalankan sync untuk mengindeks isinya.`,
+      title: 'Account connected',
+      description: `${account.label} is ready. Run a sync to index its contents.`,
       color: 'success'
     })
     resetForm()
@@ -245,7 +245,7 @@ function resetForm() {
           <div class="flex items-center justify-between mb-2.5">
             <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <span>1. Select Storage Provider</span>
-              <span class="text-emerald-400 font-normal">({{ providers.length }} didukung)</span>
+              <span class="text-emerald-400 font-normal">({{ providers.length }} supported)</span>
             </label>
             <span class="text-[11px] text-zinc-500 font-medium">Selected: <strong class="text-zinc-200">{{ currentProviderMeta.name }}</strong></span>
           </div>
@@ -320,32 +320,32 @@ function resetForm() {
               </label>
               <UInput
                 v-model="label"
-                placeholder="mis. GDrive Kerjaan"
+                placeholder="e.g. Work GDrive"
                 icon="i-lucide-tag"
                 size="md"
                 class="w-full rounded-xl"
               />
-              <span class="text-[10px] text-zinc-500 block">Nama yang tampil di explorer dan badge file.</span>
+              <span class="text-[10px] text-zinc-500 block">Shown in the explorer and on file badges.</span>
             </div>
 
-            <!-- Provider berbasis key: bucket wajib, karena akar remote
-                 penyimpanan objek adalah daftar bucket, bukan tempat menaruh file. -->
+            <!-- Key-based providers: bucket is required, since the root of an object
+                 storage remote is a list of buckets, not a place to put files. -->
             <div v-if="!currentProviderMeta.isOAuth" class="space-y-1.5">
               <label class="block text-xs font-semibold text-zinc-300">
-                Nama Bucket
+                Bucket Name
               </label>
               <UInput
                 v-model="bucketName"
-                placeholder="mis. polycloud-vault"
+                placeholder="e.g. polycloud-vault"
                 icon="i-lucide-folder-archive"
                 size="md"
                 class="w-full rounded-xl"
               />
-              <span class="text-[10px] text-zinc-500 block">Bucket tujuan; semua objek ditaruh di dalamnya.</span>
+              <span class="text-[10px] text-zinc-500 block">Destination bucket; every object is stored inside it.</span>
             </div>
           </div>
 
-          <!-- Kredensial provider berbasis key (S3, R2, B2) -->
+          <!-- Key-based provider credentials (S3, R2, B2) -->
           <div v-if="!currentProviderMeta.isOAuth" class="p-4 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-3.5">
             <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
               <span class="flex items-center gap-1.5">
@@ -410,21 +410,21 @@ function resetForm() {
             </div>
           </div>
 
-          <!-- Peringatan: provider OAuth yang kredensial platformnya belum diisi -->
+          <!-- Warning: OAuth provider whose platform credentials are not set -->
           <div
             v-if="currentProviderMeta.isOAuth && !isProviderReady"
             class="flex items-start gap-3 p-3.5 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] text-xs"
           >
             <UIcon name="i-lucide-triangle-alert" class="size-4 text-amber-400 shrink-0 mt-0.5" />
             <div class="leading-relaxed text-zinc-300">
-              <span class="font-bold text-amber-300">Provider belum dikonfigurasi.</span>
-              Kredensial OAuth {{ currentProviderMeta.name }} belum diisi di environment backend,
-              jadi proses otorisasi akan ditolak. Daftarkan aplikasi OAuth di provider,
-              lalu isi client id &amp; secret-nya di <code class="font-mono text-zinc-400">.env</code>.
+              <span class="font-bold text-amber-300">Provider not configured.</span>
+              The {{ currentProviderMeta.name }} OAuth credentials are missing from the backend
+              environment, so authorization will be rejected. Register an OAuth app with the
+              provider, then set its client id &amp; secret in <code class="font-mono text-zinc-400">.env</code>.
             </div>
           </div>
 
-          <!-- Error dari backend -->
+          <!-- Error from the backend -->
           <div
             v-if="submitError"
             class="flex items-start gap-3 p-3.5 rounded-2xl border border-red-500/25 bg-red-500/[0.06] text-xs"
@@ -465,7 +465,7 @@ function resetForm() {
             />
             <span>
               {{ isSubmitting
-                ? 'Menghubungkan...'
+                ? 'Connecting...'
                 : currentProviderMeta.isOAuth
                 ? `Authorize with ${currentProviderMeta.name}`
                 : 'Provision Remote' }}

@@ -85,10 +85,10 @@ async function loadTextPreview() {
   textError.value = ''
   try {
     const res = await fetch(inlineUrl.value)
-    if (!res.ok) throw new Error(`Gagal memuat isi file (${res.status})`)
+    if (!res.ok) throw new Error(`Could not load file contents (${res.status})`)
     textContent.value = await res.text()
   } catch (err) {
-    textError.value = err instanceof Error ? err.message : 'Gagal memuat isi file'
+    textError.value = err instanceof Error ? err.message : 'Could not load file contents'
   } finally {
     isLoadingText.value = false
   }
@@ -226,7 +226,7 @@ function resetZoom() {
               <div class="flex items-center gap-1">
                 <button
                   type="button"
-                  title="Perkecil"
+                  title="Zoom out"
                   class="size-7 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-zinc-400 hover:text-white cursor-pointer"
                   @click="zoomOut"
                 >
@@ -235,7 +235,7 @@ function resetZoom() {
                 <span class="text-[11px] font-mono text-emerald-400 px-2 min-w-12 text-center">{{ zoomLevel }}%</span>
                 <button
                   type="button"
-                  title="Perbesar"
+                  title="Zoom in"
                   class="size-7 flex items-center justify-center rounded-lg hover:bg-white/[0.08] text-zinc-400 hover:text-white cursor-pointer"
                   @click="zoomIn"
                 >
@@ -265,14 +265,14 @@ function resetZoom() {
           <div v-else-if="fileType === 'video'" class="flex-1 flex flex-col items-center justify-center space-y-4">
             <div class="w-full max-w-2xl rounded-2xl overflow-hidden border border-white/[0.08] bg-black shadow-2xl">
               <video controls class="w-full max-h-[55vh] object-contain" :src="inlineUrl">
-                Browser Anda tidak mendukung pemutaran video HTML5.
+                Your browser does not support HTML5 video playback.
               </video>
             </div>
 
             <div class="flex items-center justify-between w-full max-w-2xl px-4 py-2.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs">
               <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">
                 <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Stream langsung dari provider
+                Streaming directly from provider
               </span>
               <span class="text-zinc-400 font-mono text-[11px]">{{ formatBytes(file.size_bytes) }}</span>
             </div>
@@ -291,7 +291,7 @@ function resetZoom() {
               </div>
 
               <audio controls class="w-full" :src="inlineUrl">
-                Browser Anda tidak mendukung pemutaran audio HTML5.
+                Your browser does not support HTML5 audio playback.
               </audio>
             </div>
           </div>
@@ -299,7 +299,7 @@ function resetZoom() {
           <!-- 4. PDF DOCUMENT VIEWER -->
           <div v-else-if="fileType === 'pdf'" class="flex-1 flex flex-col space-y-3">
             <div class="flex items-center justify-between p-2.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs">
-              <span class="text-zinc-400 font-mono text-[11px]">Dirender oleh penampil PDF bawaan browser</span>
+              <span class="text-zinc-400 font-mono text-[11px]">Rendered by your browser's built-in PDF viewer</span>
               <span class="text-zinc-400 font-mono text-[11px]">{{ formatBytes(file.size_bytes) }}</span>
             </div>
 
@@ -310,7 +310,7 @@ function resetZoom() {
             />
           </div>
 
-          <!-- 5. TEKS & KONFIGURASI -->
+          <!-- 5. TEXT & CONFIG FILES -->
           <div v-else-if="fileType === 'text'" class="flex-1 flex flex-col space-y-2.5">
             <div class="flex items-center justify-between px-4 py-2 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs">
               <span class="font-mono text-emerald-400 text-[11px]">{{ file.name }}</span>
@@ -321,7 +321,7 @@ function resetZoom() {
                 @click="copySnippet"
               >
                 <UIcon :name="isCopied ? 'i-lucide-check' : 'i-lucide-copy'" class="size-3.5" :class="isCopied ? 'text-emerald-400' : ''" />
-                <span>{{ isCopied ? 'Tersalin' : 'Salin' }}</span>
+                <span>{{ isCopied ? 'Copied' : 'Copy' }}</span>
               </button>
             </div>
 
@@ -332,8 +332,8 @@ function resetZoom() {
             >
               <UIcon name="i-lucide-file-text" class="size-10 text-zinc-500" />
               <p class="text-xs text-zinc-400 max-w-sm">
-                File terlalu besar untuk dipratinjau ({{ formatBytes(file.size_bytes) }}).
-                Unduh untuk membukanya.
+                Too large to preview ({{ formatBytes(file.size_bytes) }}).
+                Download it to open the file.
               </p>
             </div>
 
@@ -372,8 +372,8 @@ function resetZoom() {
             <div>
               <h3 class="font-bold text-base text-white">{{ file.name }}</h3>
               <p class="text-xs text-zinc-400 max-w-sm mt-1">
-                Format ini tak bisa dirender langsung di browser. Unduh untuk membukanya
-                dengan aplikasi di perangkat Anda.
+                This format cannot be rendered in the browser. Download it to open the file
+                with an app on your device.
               </p>
             </div>
             <button
@@ -382,7 +382,7 @@ function resetZoom() {
               @click="emit('download', file)"
             >
               <UIcon name="i-lucide-download" class="size-4" />
-              <span>Unduh ({{ formatBytes(file.size_bytes) }})</span>
+              <span>Download ({{ formatBytes(file.size_bytes) }})</span>
             </button>
           </div>
         </div>
@@ -467,6 +467,17 @@ function resetZoom() {
 
         <!-- Right Buttons: Move, Migrate, Download -->
         <div class="flex items-center gap-2">
+          <!-- Rename: emit ini sudah dideklarasi dan didengarkan explorer, tapi
+               sebelumnya tak pernah punya pemicu. -->
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#16161b] hover:bg-[#1c1c22] text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer shadow-xs"
+            @click="emit('rename', file); emit('update:open', false)"
+          >
+            <UIcon name="i-lucide-edit-3" class="size-4 text-sky-400" />
+            <span>Rename</span>
+          </button>
+
           <button
             type="button"
             class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#16161b] hover:bg-[#1c1c22] text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer shadow-xs"

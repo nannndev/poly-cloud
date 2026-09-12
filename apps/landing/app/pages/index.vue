@@ -43,6 +43,7 @@ onBeforeUnmount(() => observer?.disconnect())
       <ArchitectureSection />
       <ScreensSection />
       <InstallSection />
+      <OpenSourceSection />
     </main>
     <SiteFooter />
   </div>

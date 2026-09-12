@@ -23,6 +23,16 @@ export const useFilesStore = defineStore('files', () => {
   const sortBy = ref<'name' | 'size' | 'modified'>('name')
   const sortDirection = ref<'asc' | 'desc'>('asc')
 
+  // Paging dikerjakan backend (query DB). Tanpa ini, daftar terpotong diam-diam
+  // di baris ke-500 dan sisanya tak pernah terlihat.
+  const page = ref(1)
+  const perPage = ref(100)
+  const totalFiles = ref(0)
+
+  // Pilihan untuk aksi massal. Disimpan sebagai id, bukan objek file, supaya
+  // tetap sahih setelah daftar dimuat ulang.
+  const selectedFileIds = ref<string[]>([])
+
   const uploadJobs = ref<UploadJob[]>([])
   const isUploadModalOpen = ref(false)
   const isNewFolderModalOpen = ref(false)
@@ -87,57 +97,33 @@ export const useFilesStore = defineStore('files', () => {
   })
 
   /**
-   * Filter & urutan yang dijalankan di klien atas hasil yang sudah dimuat.
-   * Pencarian teks dan paging dikerjakan backend (query DB); yang di sini hanya
-   * penyaringan ringan atas daftar yang sedang tampil.
+   * Daftar yang dirender. Penyaringan, urutan, dan paging seluruhnya dikerjakan
+   * backend atas index DB, jadi di sini tak ada penyaringan ulang — menyaring
+   * lagi di klien hanya akan membuang baris dari halaman yang sedang tampil dan
+   * membuat jumlah per halaman tampak tak konsisten dengan `totalFiles`.
    */
-  const filteredFiles = computed(() => {
-    let result = [...files.value]
+  const filteredFiles = computed(() => files.value)
 
-    if (selectedAccountId.value !== 'all') {
-      result = result.filter(f => f.account_id === selectedAccountId.value)
-    }
+  const totalPages = computed(() =>
+    Math.max(1, Math.ceil(totalFiles.value / perPage.value)))
 
-    if (selectedCategory.value !== 'all') {
-      result = result.filter(f => categoryOf(f) === selectedCategory.value)
-    }
+  const pageStart = computed(() =>
+    totalFiles.value === 0 ? 0 : (page.value - 1) * perPage.value + 1)
 
-    const dir = sortDirection.value === 'asc' ? 1 : -1
-    result.sort((a, b) => {
-      if (sortBy.value === 'size') return (a.size_bytes - b.size_bytes) * dir
-      if (sortBy.value === 'modified') {
-        return ((new Date(a.modified_at || 0).getTime()) - (new Date(b.modified_at || 0).getTime())) * dir
-      }
-      return a.name.localeCompare(b.name) * dir
-    })
-    return result
-  })
+  const pageEnd = computed(() =>
+    Math.min(totalFiles.value, (page.value - 1) * perPage.value + files.value.length))
 
-  /** Kategori untuk filter cepat di explorer. MIME dipercaya lebih dulu,
-   *  ekstensi jadi cadangan bagi file yang providernya tak melaporkan tipe. */
-  function categoryOf(file: FileEntry): string {
-    const mime = (file.mime || '').toLowerCase()
-    const name = file.name.toLowerCase()
-
-    if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')
-      || /\.(mp4|webm|mov|mkv|png|jpe?g|gif|webp|svg|bmp|mp3|wav|flac|m4a)$/.test(name)) {
-      return 'media'
-    }
-    if (mime.includes('zip') || mime.includes('tar') || mime.includes('gzip') || mime.includes('compressed')
-      || /\.(zip|tar|gz|tgz|rar|7z|bz2)$/.test(name)) {
-      return 'archives'
-    }
-    if (mime.includes('json') || mime.includes('yaml') || mime.includes('xml') || mime.includes('sql')
-      || mime.includes('javascript') || mime.includes('x-sh') || mime.includes('text/x-')
-      || /\.(ya?ml|toml|sql|ts|tsx|jsx?|go|py|rb|java|c|h|cpp|rs|php|sh|vue|css|html)$/.test(name)) {
-      return 'code'
-    }
-    if (mime.includes('pdf') || mime.includes('word') || mime.includes('sheet') || mime.includes('presentation')
-      || mime.includes('document') || mime.includes('csv') || mime.startsWith('text/')
-      || /\.(pdf|docx?|xlsx?|pptx?|txt|log|md|csv|tsv)$/.test(name)) {
-      return 'docs'
-    }
-    return 'other'
+  /**
+   * Kategori explorer dipetakan ke parameter `type` backend, yang dicocokkan
+   * sebagai `mime ilike %...%`. Satu kategori bisa butuh beberapa pencocokan
+   * (mis. media = image/video/audio) sementara backend hanya menerima satu pola,
+   * jadi kategori multi-pola dikirim per pola dan digabung di sini.
+   */
+  const CATEGORY_MIME: Record<string, string[]> = {
+    docs: ['pdf', 'word', 'sheet', 'presentation', 'document', 'text/', 'csv'],
+    media: ['image/', 'video/', 'audio/'],
+    archives: ['zip', 'tar', 'gzip', 'compressed', 'bzip', '7z', 'rar'],
+    code: ['json', 'yaml', 'xml', 'sql', 'javascript', 'x-sh', 'text/x-', 'typescript']
   }
 
   // ---- Muat data ----
@@ -157,11 +143,27 @@ export const useFilesStore = defineStore('files', () => {
     folders.value = all
   }
 
+  /** Parameter penyaringan & urutan yang sama untuk list maupun search. */
+  function baseQuery(): Record<string, any> {
+    const query: Record<string, any> = {
+      page: page.value,
+      per_page: perPage.value,
+      sort: sortBy.value === 'name'
+        ? (sortDirection.value === 'asc' ? 'name' : 'name_desc')
+        : `${sortBy.value}${sortDirection.value === 'asc' ? '' : '_desc'}`
+    }
+    if (selectedAccountId.value !== 'all') query.account_id = selectedAccountId.value
+    const patterns = CATEGORY_MIME[selectedCategory.value]
+    if (patterns) query.type = patterns.join(',')
+    return query
+  }
+
   async function fetchFiles() {
-    const query: Record<string, any> = { per_page: 500 }
+    const query = baseQuery()
     if (currentFolderId.value) query.folder_id = currentFolderId.value
     const res = await api.get<FileListResult>('/files', query)
     files.value = res.items
+    totalFiles.value = res.total
   }
 
   async function loadAll() {
@@ -179,12 +181,20 @@ export const useFilesStore = defineStore('files', () => {
   }
 
   /**
-   * Seluruh file milik user lintas folder — dipakai halaman statistik.
-   * Endpoint search tanpa kata kunci mengembalikan semua baris index.
+   * Seluruh file milik user lintas folder — dipakai halaman statistik, yang
+   * menjumlah ukuran per kategori dan karenanya butuh setiap baris, bukan satu
+   * halaman. Backend membatasi per_page di 500, jadi halaman berikutnya diambil
+   * sampai `total` terpenuhi.
    */
   async function fetchAllFiles(): Promise<FileEntry[]> {
-    const res = await api.get<FileListResult>('/files/search', { per_page: 500 })
-    return res.items
+    const out: FileEntry[] = []
+    let current = 1
+    for (;;) {
+      const res = await api.get<FileListResult>('/files/search', { page: current, per_page: 500 })
+      out.push(...res.items)
+      if (out.length >= res.total || res.items.length === 0) return out
+      current++
+    }
   }
 
   /** Pencarian lintas akun & folder, dijalankan backend atas index DB. */
@@ -196,18 +206,49 @@ export const useFilesStore = defineStore('files', () => {
     }
     isSearching.value = true
     try {
-      const query: Record<string, any> = { q, per_page: 500 }
-      if (selectedAccountId.value !== 'all') query.account_id = selectedAccountId.value
-      const res = await api.get<FileListResult>('/files/search', query)
+      const res = await api.get<FileListResult>('/files/search', { ...baseQuery(), q })
       files.value = res.items
+      totalFiles.value = res.total
     } finally {
       isSearching.value = false
     }
   }
 
+  /**
+   * Muat ulang daftar aktif — pencarian bila sedang mencari, isi folder bila tidak.
+   * Menghapus isi halaman terakhir bisa membuat `page` melewati halaman terakhir
+   * yang tersisa; kalau itu terjadi, mundur satu halaman dan muat lagi, supaya
+   * daftar tak tampak kosong padahal masih ada isinya.
+   */
+  async function refreshList() {
+    const load = () => (searchQuery.value.trim() ? runSearch() : fetchFiles())
+    await load()
+    while (page.value > 1 && files.value.length === 0 && totalFiles.value > 0) {
+      page.value = Math.min(page.value - 1, totalPages.value)
+      await load()
+    }
+  }
+
+  /** Pindah halaman; nomor di luar rentang diabaikan. */
+  async function goToPage(next: number) {
+    if (next < 1 || next > totalPages.value || next === page.value) return
+    page.value = next
+    clearSelection()
+    await refreshList()
+  }
+
+  /** Filter/urutan berubah → daftar kembali ke halaman pertama. */
+  async function applyFilters() {
+    page.value = 1
+    clearSelection()
+    await refreshList()
+  }
+
   async function navigateToFolder(folderId: string | null) {
     currentFolderId.value = folderId
     searchQuery.value = ''
+    page.value = 1
+    clearSelection()
     await fetchFiles()
   }
 
@@ -227,13 +268,18 @@ export const useFilesStore = defineStore('files', () => {
     await api.patch<FolderEntry>(`/folders/${folderId}`, { name: newName.trim() })
     // Rename menggeser path seluruh turunan; muat ulang agar cache path akurat.
     await fetchFolders()
-    await fetchFiles()
+    await refreshList()
   }
 
+  /**
+   * Pindahkan folder ke induk lain. Backend menolak memindahkan folder ke dalam
+   * turunannya sendiri; UI menyaring pilihan itu lebih dulu agar tak sampai ke
+   * sana, tapi penjagaan sebenarnya tetap di backend.
+   */
   async function moveFolder(folderId: string, newParentId: string | null) {
     await api.patch<FolderEntry>(`/folders/${folderId}`, { parent_id: newParentId })
     await fetchFolders()
-    await fetchFiles()
+    await refreshList()
   }
 
   async function deleteFolder(folderId: string, recursive = false) {
@@ -243,18 +289,20 @@ export const useFilesStore = defineStore('files', () => {
     const deleted = folders.value.find(f => f.id === folderId)
     if (deleted && currentFolder.value?.path.startsWith(deleted.path)) {
       currentFolderId.value = deleted.parent_id
+      page.value = 1
     }
     await fetchFolders()
-    await fetchFiles()
+    await refreshList()
     if (recursive) await accountsStore.fetchQuota().catch(() => null)
   }
 
   async function moveFileToFolder(fileId: string, targetFolderId: string | null) {
     const updated = await api.patch<FileEntry>(`/files/${fileId}`, { folder_id: targetFolderId })
-    applyFileUpdate(updated)
-    // File yang pindah keluar dari folder aktif tak lagi tampil di sini.
+    // File yang pindah keluar dari folder aktif tak lagi termasuk halaman ini.
     if (!searchQuery.value.trim() && updated.folder_id !== currentFolderId.value) {
-      files.value = files.value.filter(f => f.id !== fileId)
+      await refreshList()
+    } else {
+      applyFileUpdate(updated)
     }
   }
 
@@ -272,14 +320,16 @@ export const useFilesStore = defineStore('files', () => {
 
   async function deleteFile(fileId: string) {
     await api.del(`/files/${fileId}`)
-    files.value = files.value.filter(f => f.id !== fileId)
+    // Baris hilang dari index, jadi halaman ini digeser isi halaman berikutnya —
+    // muat ulang alih-alih menyunting daftar lokal, supaya `total` tetap benar.
+    await refreshList()
     await accountsStore.fetchQuota().catch(() => null)
   }
 
   /** Pindah fisik antar akun — transfer data nyata, beda dari pindah folder. */
   async function moveFile(fileId: string, destAccountId: string) {
     await api.post(`/files/${fileId}/move`, { dest_account_id: destAccountId })
-    await fetchFiles()
+    await refreshList()
     await Promise.all([
       accountsStore.fetchAccounts().catch(() => null),
       accountsStore.fetchQuota().catch(() => null)
@@ -289,6 +339,101 @@ export const useFilesStore = defineStore('files', () => {
   /** URL unduh langsung; browser yang menstream, bukan JS. */
   function downloadUrl(fileId: string) {
     return `${api.baseURL}/files/${fileId}/download`
+  }
+
+  // ---- Pilihan & aksi massal ----
+
+  const selectedFiles = computed(() =>
+    files.value.filter(f => selectedFileIds.value.includes(f.id)))
+
+  const selectedBytes = computed(() =>
+    selectedFiles.value.reduce((sum, f) => sum + f.size_bytes, 0))
+
+  const allVisibleSelected = computed(() =>
+    files.value.length > 0 && files.value.every(f => selectedFileIds.value.includes(f.id)))
+
+  function isSelected(fileId: string) {
+    return selectedFileIds.value.includes(fileId)
+  }
+
+  function toggleSelection(fileId: string) {
+    selectedFileIds.value = selectedFileIds.value.includes(fileId)
+      ? selectedFileIds.value.filter(id => id !== fileId)
+      : [...selectedFileIds.value, fileId]
+  }
+
+  /** Pilih rentang dari jangkar terakhir — perilaku shift-click daftar berkas. */
+  function selectRange(fromId: string, toId: string) {
+    const ids = files.value.map(f => f.id)
+    const start = ids.indexOf(fromId)
+    const end = ids.indexOf(toId)
+    if (start === -1 || end === -1) return
+    const slice = ids.slice(Math.min(start, end), Math.max(start, end) + 1)
+    const merged = new Set([...selectedFileIds.value, ...slice])
+    selectedFileIds.value = ids.filter(id => merged.has(id))
+  }
+
+  function toggleSelectAll() {
+    selectedFileIds.value = allVisibleSelected.value ? [] : files.value.map(f => f.id)
+  }
+
+  function clearSelection() {
+    selectedFileIds.value = []
+  }
+
+  /**
+   * Jalankan satu operasi atas tiap file terpilih, berurutan. Satu kegagalan tak
+   * menghentikan sisanya; yang gagal dikembalikan agar UI bisa melaporkannya.
+   */
+  async function runBulk(
+    ids: string[],
+    op: (fileId: string) => Promise<unknown>
+  ): Promise<{ ok: number; failed: { id: string; error: unknown }[] }> {
+    const failed: { id: string; error: unknown }[] = []
+    let ok = 0
+    for (const id of ids) {
+      try {
+        await op(id)
+        ok++
+      } catch (error) {
+        failed.push({ id, error })
+      }
+    }
+    return { ok, failed }
+  }
+
+  /** Hapus seluruh file terpilih — objek fisik di provider ikut terhapus. */
+  async function deleteSelected() {
+    const ids = [...selectedFileIds.value]
+    const res = await runBulk(ids, id => api.del(`/files/${id}`))
+    clearSelection()
+    await refreshList()
+    await accountsStore.fetchQuota().catch(() => null)
+    return res
+  }
+
+  /** Pindahkan seluruh file terpilih ke satu folder virtual (transaksi DB murni). */
+  async function moveSelectedToFolder(targetFolderId: string | null) {
+    const ids = [...selectedFileIds.value]
+    const res = await runBulk(ids, id =>
+      api.patch<FileEntry>(`/files/${id}`, { folder_id: targetFolderId }))
+    clearSelection()
+    await refreshList()
+    return res
+  }
+
+  /** Migrasikan seluruh file terpilih ke akun lain — transfer data nyata. */
+  async function migrateSelected(destAccountId: string) {
+    const ids = [...selectedFileIds.value]
+    const res = await runBulk(ids, id =>
+      api.post(`/files/${id}/move`, { dest_account_id: destAccountId }))
+    clearSelection()
+    await refreshList()
+    await Promise.all([
+      accountsStore.fetchAccounts().catch(() => null),
+      accountsStore.fetchQuota().catch(() => null)
+    ])
+    return res
   }
 
   // ---- Upload ----
@@ -429,6 +574,16 @@ export const useFilesStore = defineStore('files', () => {
     viewMode,
     sortBy,
     sortDirection,
+    page,
+    perPage,
+    totalFiles,
+    totalPages,
+    pageStart,
+    pageEnd,
+    selectedFileIds,
+    selectedFiles,
+    selectedBytes,
+    allVisibleSelected,
     uploadJobs,
     isUploadModalOpen,
     isNewFolderModalOpen,
@@ -439,6 +594,17 @@ export const useFilesStore = defineStore('files', () => {
     loadAll,
     fetchFolders,
     fetchFiles,
+    refreshList,
+    goToPage,
+    applyFilters,
+    isSelected,
+    toggleSelection,
+    selectRange,
+    toggleSelectAll,
+    clearSelection,
+    deleteSelected,
+    moveSelectedToFolder,
+    migrateSelected,
     runSearch,
     fetchAllFiles,
     navigateToFolder,

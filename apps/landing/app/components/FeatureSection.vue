@@ -1,39 +1,39 @@
 <script setup lang="ts">
-// Setiap butir di sini adalah kemampuan yang sudah berjalan, bukan rencana.
+// Every item here is a capability that already works, not a roadmap entry.
 const features = [
   {
-    title: 'Penempatan otomatis',
-    body: 'Saat mengunggah, sistem memilih akun dengan sisa ruang terbanyak. Anda tidak perlu memikirkan tujuannya.',
+    title: 'Automatic placement',
+    body: 'On upload, the router picks the account with the most free space. You never choose a destination.',
     icon: 'route'
   },
   {
-    title: 'Folder virtual',
-    body: 'Struktur folder hidup di basis data platform. Memindahkan berkas antar folder hanya mengubah catatan, tidak memindahkan data.',
+    title: 'Virtual folders',
+    body: 'Your folder tree lives in the platform database. Moving a file between folders rewrites a record, not the data.',
     icon: 'folder'
   },
   {
-    title: 'Tanpa singgah di server',
-    body: 'Unggahan dan unduhan dialirkan langsung antara peramban dan penyedia. Server tidak menyimpan salinan berkas.',
+    title: 'Nothing spooled on the server',
+    body: 'Uploads and downloads stream straight between the browser and the provider. The server keeps no copy.',
     icon: 'stream'
   },
   {
-    title: 'Token terenkripsi',
-    body: 'Kredensial penyedia disimpan terenkripsi AES-256-GCM di PostgreSQL, terpisah dari data akun lainnya.',
+    title: 'Encrypted tokens',
+    body: 'Provider credentials are stored AES-256-GCM encrypted in PostgreSQL, separate from the rest of the account data.',
     icon: 'lock'
   },
   {
-    title: 'Pencarian lintas akun',
-    body: 'Metadata berkas diindeks di basis data, jadi pencarian dijawab tanpa menunggu respons penyedia.',
+    title: 'Search across accounts',
+    body: 'File metadata is indexed in the database, so search answers without waiting on any provider.',
     icon: 'search'
   }
 ]
 </script>
 
 <template>
-  <section id="cara-kerja" class="border-b border-white/[0.06] scroll-mt-16">
+  <section id="how-it-works" class="border-b border-white/[0.06] scroll-mt-16">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
       <h2 class="max-w-xl text-2xl font-semibold tracking-tight text-white md:text-3xl">
-        Yang dikerjakan Poly Cloud untuk Anda
+        What Poly Cloud does for you
       </h2>
 
       <!-- Lima butir dalam susunan asimetris: dua kartu lebar di baris pertama,

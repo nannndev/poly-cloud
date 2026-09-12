@@ -8,7 +8,7 @@ const { formatBytes, getProviderMeta } = useFormatters()
 // Statistik harus mencakup seluruh file, bukan hanya folder yang sedang dibuka.
 const allFiles = ref<FileEntry[]>([])
 
-await useAsyncData('quota-page', async () => {
+const { refresh: reloadQuota } = await useAsyncData('quota-page', async () => {
   const [, files] = await Promise.all([
     accountsStore.loadAll().catch(() => null),
     filesStore.fetchAllFiles().catch(() => [] as FileEntry[])
@@ -16,6 +16,10 @@ await useAsyncData('quota-page', async () => {
   allFiles.value = files || []
   return true
 }, { server: false, default: () => false })
+
+// Halaman ini seluruhnya angka; tanpa pembeda, backend mati tampak seperti
+// akun yang memang kosong.
+const isEmpty = computed(() => accountsStore.accounts.length === 0)
 
 const categoryStats = computed(() => {
   let docsBytes = 0
@@ -72,7 +76,39 @@ const categoryStats = computed(() => {
       </template>
 
       <template #body>
-        <div class="space-y-6 p-1">
+        <StateNotice
+          v-if="accountsStore.isLoading && isEmpty"
+          variant="loading"
+          title="Loading storage report..."
+        />
+
+        <StateNotice
+          v-else-if="accountsStore.loadError && isEmpty"
+          variant="error"
+          title="Could not load the storage report"
+          :description="accountsStore.loadError"
+          @retry="reloadQuota"
+        />
+
+        <StateNotice
+          v-else-if="isEmpty"
+          title="No accounts connected yet"
+          description="Connect a cloud account to see how your storage is distributed."
+          icon="i-lucide-cloud-off"
+        >
+          <template #actions>
+            <UButton
+              label="Connect an account"
+              icon="i-lucide-plus"
+              color="primary"
+              size="xs"
+              class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+              to="/accounts"
+            />
+          </template>
+        </StateNotice>
+
+        <div v-else class="space-y-6 p-1">
           <!-- Big Total Aggregate Banner -->
           <div class="p-6 rounded-3xl border border-white/[0.08] bg-[#111114] shadow-xs space-y-4">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">

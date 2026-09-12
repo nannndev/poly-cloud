@@ -80,76 +80,99 @@ func orderClause(sort string) string {
 	}
 }
 
-// ListByFolder mengambil isi satu folder virtual (folderID nil = root).
-func (r *FileRepo) ListByFolder(ctx context.Context, userID string, folderID *string, q domain.SearchQuery) ([]domain.FileEntry, int, error) {
-	where := ` where f.user_id = $1 and f.folder_id is null`
-	args := []any{userID}
-	if folderID != nil {
-		where = ` where f.user_id = $1 and f.folder_id = $2`
-		args = append(args, *folderID)
+// filterBuilder merakit WHERE berparameter. Nilai tak pernah diinterpolasi ke
+// SQL — hanya nomor placeholder yang disisipkan.
+type filterBuilder struct {
+	conds []string
+	args  []any
+}
+
+// add menukar "?" di cond dengan placeholder berikutnya.
+func (b *filterBuilder) add(cond string, val any) {
+	b.args = append(b.args, val)
+	b.conds = append(b.conds, strings.Replace(cond, "?", "$"+strconv.Itoa(len(b.args)), 1))
+}
+
+// addAny menggabungkan beberapa pola untuk kolom yang sama sebagai OR, dipakai
+// filter kategori: "media" berarti image/ atau video/ atau audio/, dan tanpa
+// pengelompokan ini kategori semacam itu tak bisa dinyatakan sama sekali.
+func (b *filterBuilder) addAny(cond string, vals []string) {
+	parts := make([]string, 0, len(vals))
+	for _, v := range vals {
+		b.args = append(b.args, v)
+		parts = append(parts, strings.Replace(cond, "?", "$"+strconv.Itoa(len(b.args)), 1))
 	}
+	if len(parts) > 0 {
+		b.conds = append(b.conds, "("+strings.Join(parts, " or ")+")")
+	}
+}
+
+func (b *filterBuilder) where() string {
+	return " where " + strings.Join(b.conds, " and ")
+}
+
+// applyFilters menambahkan penyaring yang berlaku sama untuk list dan search,
+// supaya filter akun/tipe/ukuran berperilaku identik di kedua endpoint.
+func (b *filterBuilder) applyFilters(q domain.SearchQuery) {
+	if q.Q != "" {
+		b.add("f.name ilike ?", "%"+q.Q+"%")
+	}
+	if patterns := q.MimePatterns(); len(patterns) > 0 {
+		wrapped := make([]string, 0, len(patterns))
+		for _, p := range patterns {
+			wrapped = append(wrapped, "%"+p+"%")
+		}
+		b.addAny("f.mime ilike ?", wrapped)
+	}
+	if q.MinSize > 0 {
+		b.add("f.size_bytes >= ?", q.MinSize)
+	}
+	if q.MaxSize > 0 {
+		b.add("f.size_bytes <= ?", q.MaxSize)
+	}
+	if q.AccountID != "" {
+		b.add("exists (select 1 from file_blocks fb where fb.file_id = f.id and fb.account_id = ?)", q.AccountID)
+	}
+}
+
+// page menjalankan count + select berhalaman atas WHERE yang sudah dirakit.
+func (r *FileRepo) page(ctx context.Context, b *filterBuilder, q domain.SearchQuery, what string) ([]domain.FileEntry, int, error) {
+	where := b.where()
 
 	var total int
-	countQ := `select count(*) from files_index f` + where
-	if err := r.pool.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("hitung file: %w", err)
+	if err := r.pool.QueryRow(ctx, `select count(*) from files_index f`+where, b.args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("hitung %s: %w", what, err)
 	}
 
-	args = append(args, q.PerPage, (q.Page-1)*q.PerPage)
+	args := append(append([]any{}, b.args...), q.PerPage, (q.Page-1)*q.PerPage)
 	sql := fileSelect + where + orderClause(q.Sort) +
 		fmt.Sprintf(" limit $%d offset $%d", len(args)-1, len(args))
 
 	rows, err := r.pool.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list file: %w", err)
+		return nil, 0, fmt.Errorf("%s: %w", what, err)
 	}
 	items, err := collectFiles(rows)
 	return items, total, err
 }
 
+// ListByFolder mengambil isi satu folder virtual (folderID nil = root).
+func (r *FileRepo) ListByFolder(ctx context.Context, userID string, folderID *string, q domain.SearchQuery) ([]domain.FileEntry, int, error) {
+	b := &filterBuilder{conds: []string{"f.user_id = $1"}, args: []any{userID}}
+	if folderID != nil {
+		b.add("f.folder_id = ?", *folderID)
+	} else {
+		b.conds = append(b.conds, "f.folder_id is null")
+	}
+	b.applyFilters(q)
+	return r.page(ctx, b, q, "list file")
+}
+
 // Search mencari lintas account dari cache DB (tak menyentuh provider).
 func (r *FileRepo) Search(ctx context.Context, userID string, q domain.SearchQuery) ([]domain.FileEntry, int, error) {
-	var (
-		conds = []string{"f.user_id = $1"}
-		args  = []any{userID}
-	)
-	add := func(cond string, val any) {
-		args = append(args, val)
-		conds = append(conds, strings.Replace(cond, "?", "$"+strconv.Itoa(len(args)), 1))
-	}
-
-	if q.Q != "" {
-		add("f.name ilike ?", "%"+q.Q+"%")
-	}
-	if q.Mime != "" {
-		add("f.mime ilike ?", "%"+q.Mime+"%")
-	}
-	if q.MinSize > 0 {
-		add("f.size_bytes >= ?", q.MinSize)
-	}
-	if q.MaxSize > 0 {
-		add("f.size_bytes <= ?", q.MaxSize)
-	}
-	if q.AccountID != "" {
-		add("exists (select 1 from file_blocks fb where fb.file_id = f.id and fb.account_id = ?)", q.AccountID)
-	}
-	where := " where " + strings.Join(conds, " and ")
-
-	var total int
-	if err := r.pool.QueryRow(ctx, `select count(*) from files_index f`+where, args...).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("hitung hasil search: %w", err)
-	}
-
-	args = append(args, q.PerPage, (q.Page-1)*q.PerPage)
-	sql := fileSelect + where + orderClause(q.Sort) +
-		fmt.Sprintf(" limit $%d offset $%d", len(args)-1, len(args))
-
-	rows, err := r.pool.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, 0, fmt.Errorf("search file: %w", err)
-	}
-	items, err := collectFiles(rows)
-	return items, total, err
+	b := &filterBuilder{conds: []string{"f.user_id = $1"}, args: []any{userID}}
+	b.applyFilters(q)
+	return r.page(ctx, b, q, "search file")
 }
 
 // NewFile = payload pembuatan baris index setelah upload/sync berhasil.

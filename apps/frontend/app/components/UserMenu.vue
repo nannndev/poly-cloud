@@ -54,7 +54,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
   ],
   [
     {
-      label: 'Cek Kesehatan API',
+      label: 'API Health Check',
       icon: 'i-lucide-external-link',
       to: config.public.apiBase.replace(/\/api\/v1$/, '') + '/healthz',
       target: '_blank'

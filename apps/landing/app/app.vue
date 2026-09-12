@@ -1,8 +1,8 @@
 <script setup lang="ts">
-const title = 'Poly Cloud - Satukan Semua Akun Cloud Jadi Satu Drive'
+const title = 'Poly Cloud — Many Cloud Accounts, One Drive'
 const description =
-  'Platform self-hosted yang menggabungkan Google Drive, Dropbox, OneDrive, S3, dan B2 '
-  + 'jadi satu ruang penyimpanan. Unggahan diarahkan otomatis ke akun dengan sisa ruang terbanyak.'
+  'Open-source, self-hosted storage aggregator that merges Google Drive, Dropbox, OneDrive, '
+  + 'S3, and B2 into a single drive. Uploads route automatically to the account with the most free space.'
 
 useHead({
   title,

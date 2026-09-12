@@ -2,16 +2,28 @@
 const accountsStore = useAccountsStore()
 const filesStore = useFilesStore()
 const { formatBytes } = useFormatters()
+const { latency, status, check } = useBackendHealth()
 
 // Explorer butuh keduanya: daftar akun untuk badge & filter, folder + file
 // untuk isinya. Dimuat di klien karena backend hanya dijangkau dari browser.
 await useAsyncData('explorer-page', async () => {
   await Promise.all([
     accountsStore.loadAll().catch(() => null),
-    filesStore.loadAll().catch(() => null)
+    filesStore.loadAll().catch(() => null),
+    check()
   ])
   return true
 }, { server: false, default: () => false })
+
+// Banner KPI ikut memberi tahu saat backend tak terjangkau; angka nol di kartu
+// tanpa penjelasan terbaca seperti "memang belum ada apa-apa".
+const loadFailed = computed(() =>
+  Boolean(filesStore.loadError) && filesStore.files.length === 0)
+
+// Tujuan yang akan dipilih router untuk unggahan berikutnya. Ini prediksi dari
+// kuota yang terakhir disinkronkan — keputusan sebenarnya tetap di backend saat
+// unggahan berjalan (ADR-008).
+const routingTarget = computed(() => accountsStore.recommendedAccount)
 </script>
 
 <template>
@@ -61,6 +73,25 @@ await useAsyncData('explorer-page', async () => {
 
       <template #body>
         <div class="space-y-6 p-1">
+          <div
+            v-if="loadFailed"
+            class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06]"
+          >
+            <span class="flex items-center gap-2.5 text-xs text-rose-200">
+              <UIcon name="i-lucide-circle-alert" class="size-4 text-rose-400 shrink-0" />
+              <span>{{ filesStore.loadError }} — the figures below may be out of date.</span>
+            </span>
+            <UButton
+              label="Retry"
+              icon="i-lucide-refresh-cw"
+              color="error"
+              variant="subtle"
+              size="xs"
+              class="rounded-xl font-semibold"
+              @click="filesStore.loadAll().catch(() => null)"
+            />
+          </div>
+
           <!-- Top KPI Metrics Banner -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Metric 1: Total Unified Storage -->
@@ -102,7 +133,7 @@ await useAsyncData('explorer-page', async () => {
               <div>
                 <div class="flex items-baseline gap-2">
                   <span class="text-2xl font-black text-white font-mono tracking-tight">
-                    {{ filesStore.files.length }}
+                    {{ filesStore.totalFiles }}
                   </span>
                   <span class="text-xs text-zinc-400 font-mono">files</span>
                   <span class="text-zinc-600">•</span>
@@ -113,9 +144,15 @@ await useAsyncData('explorer-page', async () => {
                 </div>
                 <p class="text-[11px] text-zinc-400 mt-0.5">Unified virtual hierarchy in platform DB</p>
               </div>
+              <!-- Latensi nyata dari /healthz, bukan angka tetap. -->
               <div class="p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] flex items-center justify-between text-[11px]">
-                <span class="text-zinc-400 font-medium">Query Latency</span>
-                <span class="font-mono text-emerald-400 font-medium">&lt; 12ms</span>
+                <span class="text-zinc-400 font-medium">API Latency</span>
+                <span
+                  class="font-mono font-medium"
+                  :class="status === 'offline' ? 'text-rose-400' : 'text-emerald-400'"
+                >
+                  {{ status === 'offline' ? 'unreachable' : latency === null ? '—' : `${latency} ms` }}
+                </span>
               </div>
             </div>
 
@@ -161,9 +198,13 @@ await useAsyncData('explorer-page', async () => {
                 </div>
                 <p class="text-[11px] text-zinc-400 mt-0.5">Automated storage placement</p>
               </div>
-              <div class="p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] flex items-center justify-between text-[11px]">
-                <span class="text-zinc-400 font-medium">Optimal Target</span>
-                <span class="font-medium text-emerald-400">OneDrive (65.8 GB)</span>
+              <!-- Tujuan nyata menurut kuota terakhir, bukan contoh tetap. -->
+              <div class="p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] flex items-center justify-between gap-2 text-[11px]">
+                <span class="text-zinc-400 font-medium shrink-0">Next Target</span>
+                <span v-if="routingTarget" class="font-medium text-emerald-400 truncate">
+                  {{ routingTarget.label }} ({{ formatBytes(routingTarget.free_bytes) }})
+                </span>
+                <span v-else class="font-medium text-amber-400">No active account</span>
               </div>
             </div>
           </div>

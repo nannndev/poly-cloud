@@ -11,20 +11,21 @@ const providers = [
 </script>
 
 <template>
-  <section id="provider" class="border-b border-white/[0.06] bg-ink-900 scroll-mt-16">
+  <section id="providers" class="border-b border-white/[0.06] bg-ink-900 scroll-mt-16">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
       <div class="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
         <div>
           <h2 class="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-            Enam penyedia, satu cara pakai
+            Six providers, one way to use them
           </h2>
           <p class="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-zinc-400">
-            Penyedia OAuth dihubungkan lewat halaman izin di peramban. Penyedia berbasis
-            kunci cukup lewat formulir kredensial. Setelah terhubung, semuanya diperlakukan sama.
+            OAuth providers connect through a consent page in the browser. Key-based
+            providers need only a credentials form. Once connected, all of them are
+            treated the same.
           </p>
           <p class="mt-4 max-w-[52ch] text-sm leading-relaxed text-zinc-500">
-            Operasi berkas dijalankan lewat rclone, sehingga menambah penyedia baru tidak
-            menyentuh antarmuka maupun skema basis data.
+            File operations run through rclone, so adding a new provider touches neither
+            the interface nor the database schema.
           </p>
         </div>
 

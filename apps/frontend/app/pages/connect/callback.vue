@@ -15,10 +15,10 @@ const state = computed(() => (route.query.state as string) || '')
 const providerError = computed(() => (route.query.error_description || route.query.error) as string | undefined)
 
 const steps = [
-  { id: 1, title: 'Menukar authorization code', desc: 'Backend menghubungi token endpoint provider' },
-  { id: 2, title: 'Menyimpan token terenkripsi', desc: 'AES-256-GCM di tabel account_tokens' },
-  { id: 3, title: 'Provisioning remote rclone', desc: 'config/create dengan identitas acc_<uuid>' },
-  { id: 4, title: 'Sinkronisasi index awal', desc: 'Membaca isi akun ke files_index' }
+  { id: 1, title: 'Exchanging authorization code', desc: 'Backend calls the provider token endpoint' },
+  { id: 2, title: 'Storing encrypted token', desc: 'AES-256-GCM in the account_tokens table' },
+  { id: 3, title: 'Provisioning rclone remote', desc: 'config/create under the acc_<uuid> identity' },
+  { id: 4, title: 'Initial index sync', desc: 'Reading account contents into files_index' }
 ]
 
 // Backend menyelesaikan langkah 1-3 dalam satu panggilan callback, lalu
@@ -38,12 +38,12 @@ const progressPercent = computed(() => {
 onMounted(async () => {
   if (providerError.value) {
     phase.value = 'failed'
-    errorMessage.value = `Provider menolak otorisasi: ${providerError.value}`
+    errorMessage.value = `The provider rejected authorization: ${providerError.value}`
     return
   }
   if (!code.value || !state.value) {
     phase.value = 'failed'
-    errorMessage.value = 'Parameter code atau state tidak ada di URL callback.'
+    errorMessage.value = 'The callback URL is missing the code or state parameter.'
     return
   }
 
@@ -87,15 +87,15 @@ onMounted(async () => {
         <div>
           <h2 class="text-base font-bold text-white">
             {{ phase === 'failed'
-              ? 'Gagal menghubungkan akun'
+              ? 'Could not connect the account'
               : phase === 'done'
-              ? 'Akun berhasil terhubung'
-              : 'Menghubungkan akun...' }}
+              ? 'Account connected'
+              : 'Connecting account...' }}
           </h2>
           <p v-if="phase !== 'failed'" class="text-xs text-zinc-400 mt-1 max-w-sm">
-            Backend menukar authorization code, menyimpan token terenkripsi, lalu
-            mendaftarkan <strong class="text-emerald-400">{{ accountLabel || 'akun ini' }}</strong>
-            sebagai remote di rclone daemon.
+            The backend exchanges the authorization code, stores the encrypted token, then
+            registers <strong class="text-emerald-400">{{ accountLabel || 'this account' }}</strong>
+            as a remote in the rclone daemon.
           </p>
           <p v-else class="text-xs text-zinc-400 mt-1 max-w-sm">{{ errorMessage }}</p>
         </div>
@@ -152,22 +152,22 @@ onMounted(async () => {
           />
         </div>
         <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
-          <span>{{ phase === 'done' ? 'Selesai' : 'Sedang berjalan' }}</span>
+          <span>{{ phase === 'done' ? 'Done' : 'In progress' }}</span>
           <span class="text-emerald-400">{{ progressPercent }}%</span>
         </div>
       </div>
 
-      <!-- Aksi saat gagal -->
+      <!-- Failure actions -->
       <div v-else class="flex items-center justify-center gap-2.5">
         <UButton
-          label="Kembali ke Accounts"
+          label="Back to Accounts"
           color="neutral"
           variant="ghost"
           class="rounded-xl font-medium"
           @click="router.push('/accounts')"
         />
         <UButton
-          label="Coba lagi"
+          label="Try again"
           color="primary"
           class="rounded-xl font-bold"
           @click="router.push('/accounts?connect=1')"

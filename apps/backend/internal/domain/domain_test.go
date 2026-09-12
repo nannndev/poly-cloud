@@ -22,3 +22,32 @@ func TestFsTarget(t *testing.T) {
 		})
 	}
 }
+
+// Filter kategori di UI memetakan satu kategori ke beberapa pola MIME; pola itu
+// dikirim sebagai satu parameter dipisah koma.
+func TestMimePatterns(t *testing.T) {
+	cases := []struct {
+		name string
+		mime string
+		want []string
+	}{
+		{"kosong", "", nil},
+		{"pola tunggal", "pdf", []string{"pdf"}},
+		{"beberapa pola", "image/,video/,audio/", []string{"image/", "video/", "audio/"}},
+		{"spasi dan koma kosong dibuang", " pdf , ,word ", []string{"pdf", "word"}},
+		{"hanya koma", ",,", []string{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := SearchQuery{Mime: tc.mime}.MimePatterns()
+			if len(got) != len(tc.want) {
+				t.Fatalf("MimePatterns() = %q, mau %q", got, tc.want)
+			}
+			for i := range got {
+				if got[i] != tc.want[i] {
+					t.Fatalf("MimePatterns()[%d] = %q, mau %q", i, got[i], tc.want[i])
+				}
+			}
+		})
+	}
+}

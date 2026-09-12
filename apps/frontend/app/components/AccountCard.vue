@@ -57,12 +57,12 @@ async function handleSync() {
   try {
     const res = await accountsStore.syncAccount(props.account.id)
     toast.add({
-      title: `${props.account.label} tersinkron`,
-      description: `${res.files_indexed} file terindeks.`,
+      title: `${props.account.label} synced`,
+      description: `${res.files_indexed} files indexed.`,
       color: 'success'
     })
   } catch (err) {
-    toast.add({ title: 'Sync gagal', description: friendlyMessage(err), color: 'error' })
+    toast.add({ title: 'Sync failed', description: friendlyMessage(err), color: 'error' })
   }
 }
 
@@ -71,9 +71,9 @@ async function handleDisconnect() {
   try {
     await accountsStore.removeAccount(props.account.id)
     isDisconnectOpen.value = false
-    toast.add({ title: `${props.account.label} dicabut`, color: 'success' })
+    toast.add({ title: `${props.account.label} disconnected`, color: 'success' })
   } catch (err) {
-    toast.add({ title: 'Gagal mencabut akun', description: friendlyMessage(err), color: 'error' })
+    toast.add({ title: 'Could not disconnect account', description: friendlyMessage(err), color: 'error' })
   } finally {
     isDisconnecting.value = false
   }
@@ -86,7 +86,7 @@ async function handleReconnect() {
     const authUrl = await accountsStore.reconnectAccount(props.account.id)
     window.location.href = authUrl
   } catch (err) {
-    toast.add({ title: 'Tidak bisa reconnect', description: friendlyMessage(err), color: 'error' })
+    toast.add({ title: 'Reconnect failed', description: friendlyMessage(err), color: 'error' })
     isReconnecting.value = false
   }
 }
@@ -195,7 +195,7 @@ async function handleReconnect() {
 
         <div v-else class="flex items-center gap-2 text-xs text-zinc-400">
           <UIcon name="i-lucide-infinity" class="size-3.5 text-zinc-500" />
-          <span>Provider ini tidak melaporkan kuota</span>
+          <span>This provider does not report quota</span>
         </div>
       </div>
     </div>
@@ -204,7 +204,7 @@ async function handleReconnect() {
     <div class="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
       <div class="flex items-center gap-1.5 text-[11px] text-muted">
         <UIcon name="i-lucide-refresh-cw" class="size-3" :class="[isSyncingThis ? 'animate-spin text-sky-500' : '']" />
-        <span>{{ account.last_synced ? formatDate(account.last_synced) : 'Belum pernah sync' }}</span>
+        <span>{{ account.last_synced ? formatDate(account.last_synced) : 'Never synced' }}</span>
       </div>
 
       <div class="flex items-center gap-2">
@@ -247,23 +247,23 @@ async function handleReconnect() {
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold flex items-center gap-2 text-rose-400">
             <UIcon name="i-lucide-unlink" class="size-5" />
-            Cabut Akun
+            Disconnect Account
           </h3>
         </div>
       </template>
 
       <template #body>
         <p class="text-xs text-zinc-400 leading-relaxed">
-          <strong class="text-white">{{ account.label }}</strong> akan dilepas dari platform:
-          token dan index file-nya dihapus. File yang sudah ada di provider
-          <strong class="text-zinc-200">tidak ikut dihapus</strong>.
+          <strong class="text-white">{{ account.label }}</strong> will be detached from the
+          platform: its tokens and file index are deleted. Files already stored at the
+          provider <strong class="text-zinc-200">are left untouched</strong>.
         </p>
       </template>
 
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
-          <UButton label="Batal" color="neutral" variant="ghost" class="rounded-xl" :disabled="isDisconnecting" @click="isDisconnectOpen = false" />
-          <UButton label="Cabut Akun" color="error" class="rounded-xl font-bold" :loading="isDisconnecting" @click="handleDisconnect" />
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isDisconnecting" @click="isDisconnectOpen = false" />
+          <UButton label="Disconnect" color="error" class="rounded-xl font-bold" :loading="isDisconnecting" @click="handleDisconnect" />
         </div>
       </template>
     </UModal>

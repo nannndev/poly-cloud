@@ -19,10 +19,11 @@ const filteredAccounts = computed(() => {
   return accountsStore.accounts
 })
 
-await useAsyncData('accounts-page', () => accountsStore.loadAll().then(() => true), {
-  server: false,
-  default: () => false
-})
+const { refresh: reloadAccounts } = await useAsyncData(
+  'accounts-page',
+  () => accountsStore.loadAll().then(() => true),
+  { server: false, default: () => false }
+)
 
 async function handleSyncAll() {
   isSyncingAll.value = true
@@ -39,9 +40,9 @@ async function handleSyncAll() {
   isSyncingAll.value = false
 
   if (failed > 0) {
-    toast.add({ title: `${failed} akun gagal disinkronkan`, color: 'warning' })
+    toast.add({ title: `${failed} account${failed > 1 ? 's' : ''} failed to sync`, color: 'warning' })
   } else if (accountsStore.accounts.length > 0) {
-    toast.add({ title: 'Semua akun tersinkron', color: 'success' })
+    toast.add({ title: 'All accounts synced', color: 'success' })
   }
 }
 </script>
@@ -160,8 +161,23 @@ async function handleSyncAll() {
             </span>
           </div>
 
+          <!-- Backend tak terjangkau tak boleh tampak seperti "belum ada akun". -->
+          <StateNotice
+            v-if="accountsStore.isLoading && accountsStore.accounts.length === 0"
+            variant="loading"
+            title="Loading connected accounts..."
+          />
+
+          <StateNotice
+            v-else-if="accountsStore.loadError && accountsStore.accounts.length === 0"
+            variant="error"
+            title="Could not load your accounts"
+            :description="accountsStore.loadError"
+            @retry="reloadAccounts"
+          />
+
           <!-- Accounts Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <AccountCard
               v-for="acc in filteredAccounts"
               :key="acc.id"

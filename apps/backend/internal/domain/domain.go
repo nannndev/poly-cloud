@@ -132,6 +132,22 @@ type SearchQuery struct {
 	Sort      string
 }
 
+// MimePatterns memecah Mime jadi daftar pola. Filter kategori di UI memetakan
+// satu kategori ke beberapa pola MIME ("media" = image/, video/, audio/), yang
+// dikirim sebagai satu parameter dipisah koma dan dicocokkan sebagai OR.
+func (q SearchQuery) MimePatterns() []string {
+	if q.Mime == "" {
+		return nil
+	}
+	out := make([]string, 0, 4)
+	for _, part := range strings.Split(q.Mime, ",") {
+		if p := strings.TrimSpace(part); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 type FileListResult struct {
 	Path  string      `json:"path"`
 	Items []FileEntry `json:"items"`

@@ -16,44 +16,22 @@ const toast = useToast()
 const { formatBytes } = useFormatters()
 
 const apiBase = computed(() => config.public.apiBase)
-const healthUrl = computed(() => apiBase.value.replace(/\/api\/v1$/, '') + '/healthz')
 
 // Konfigurasi ini berasal dari environment backend saat proses start; mengubahnya
 // butuh menyunting .env lalu me-restart, jadi halaman ini menampilkan, bukan menyimpan.
 const settings = ref<BackendSettings | null>(null)
 
-type HealthState = 'checking' | 'online' | 'degraded' | 'offline'
-const backendStatus = ref<HealthState>('checking')
-const backendLatency = ref<number | null>(null)
-const healthDetail = ref<Record<string, string>>({})
-const isTesting = ref(false)
+// Status kesehatan dibagi dengan indikator di sidebar — satu sumber, supaya
+// keduanya tak pernah melaporkan hal yang berbeda.
+const {
+  status: backendStatus,
+  latency: backendLatency,
+  detail: healthDetail,
+  isChecking: isTesting,
+  check: testBackend
+} = useBackendHealth()
 
 const isReindexing = ref(false)
-
-async function testBackend() {
-  isTesting.value = true
-  backendStatus.value = 'checking'
-  const start = performance.now()
-  try {
-    const res = await $fetch<Record<string, string>>(healthUrl.value, { timeout: 5000 })
-    backendLatency.value = Math.round(performance.now() - start)
-    healthDetail.value = res
-    backendStatus.value = res.status === 'ok' ? 'online' : 'degraded'
-  } catch (err: any) {
-    // Backend menjawab 503 saat DB tak terjangkau — itu tetap informasi berguna.
-    const body = err?.data as Record<string, string> | undefined
-    backendLatency.value = Math.round(performance.now() - start)
-    if (body?.status) {
-      healthDetail.value = body
-      backendStatus.value = 'degraded'
-    } else {
-      healthDetail.value = {}
-      backendStatus.value = 'offline'
-    }
-  } finally {
-    isTesting.value = false
-  }
-}
 
 /** Sinkronkan ulang seluruh akun: baca kuota & isi terbaru dari tiap provider. */
 async function triggerReindex() {
@@ -72,8 +50,8 @@ async function triggerReindex() {
   isReindexing.value = false
 
   toast.add({
-    title: failed > 0 ? `${failed} akun gagal disinkronkan` : 'Index diperbarui',
-    description: `${indexed} file terindeks dari ${accountsStore.accounts.length} akun.`,
+    title: failed > 0 ? `${failed} account${failed > 1 ? 's' : ''} failed to sync` : 'Index refreshed',
+    description: `${indexed} files indexed across ${accountsStore.accounts.length} accounts.`,
     color: failed > 0 ? 'warning' : 'success'
   })
 }
@@ -81,17 +59,17 @@ async function triggerReindex() {
 const strategyMeta: Record<string, { label: string; desc: string }> = {
   'most-free': {
     label: 'Most Free Space',
-    desc: 'File diarahkan ke akun dengan sisa ruang terbanyak, sehingga pemakaian tersebar merata.'
+    desc: 'Files go to the account with the most free space, spreading usage evenly.'
   },
   'round-robin': {
     label: 'Round Robin',
-    desc: 'Akun tujuan dipilih bergantian secara berurutan tanpa melihat sisa ruang.'
+    desc: 'Destination accounts are picked in turn, without regard to free space.'
   }
 }
 
 const activeStrategy = computed(() => {
   const key = settings.value?.routing_strategy || 'most-free'
-  return { key, ...(strategyMeta[key] || { label: key, desc: 'Strategi kustom.' }) }
+  return { key, ...(strategyMeta[key] || { label: key, desc: 'Custom strategy.' }) }
 })
 
 await useAsyncData('settings-page', async () => {
@@ -130,7 +108,7 @@ await useAsyncData('settings-page', async () => {
 
           <template #right>
             <UButton
-              label="Cek Ulang"
+              label="Re-check"
               icon="i-lucide-refresh-cw"
               color="neutral"
               variant="outline"
@@ -184,10 +162,10 @@ await useAsyncData('settings-page', async () => {
                       }"
                     />
                     <span>
-                      {{ backendStatus === 'online' ? 'Terhubung'
-                        : backendStatus === 'degraded' ? 'Sebagian bermasalah'
-                        : backendStatus === 'offline' ? 'Tidak terjangkau'
-                        : 'Memeriksa...' }}
+                      {{ backendStatus === 'online' ? 'Connected'
+                        : backendStatus === 'degraded' ? 'Partially degraded'
+                        : backendStatus === 'offline' ? 'Unreachable'
+                        : 'Checking...' }}
                     </span>
                   </div>
 
@@ -211,12 +189,12 @@ await useAsyncData('settings-page', async () => {
                     {{ apiBase }}
                   </div>
                   <span class="text-[10px] text-muted block">
-                    Diatur lewat <code class="font-mono">NUXT_PUBLIC_API_BASE</code> saat build.
+                    Set via <code class="font-mono">NUXT_PUBLIC_API_BASE</code> at build time.
                   </span>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="block text-xs font-bold text-highlighted">Latensi</label>
+                  <label class="block text-xs font-bold text-highlighted">Latency</label>
                   <div class="h-10 px-3.5 rounded-xl border border-default/70 bg-elevated/40 flex items-center justify-between text-xs">
                     <span class="text-muted flex items-center gap-1.5 font-medium">
                       <UIcon name="i-lucide-activity" class="size-3.5 text-sky-500" />
@@ -229,7 +207,7 @@ await useAsyncData('settings-page', async () => {
                 </div>
               </div>
 
-              <!-- Rincian kesehatan per dependensi -->
+              <!-- Per-dependency health detail -->
               <div v-if="Object.keys(healthDetail).length > 0" class="flex flex-wrap gap-2 pt-1">
                 <span
                   v-for="(value, key) in healthDetail"
@@ -259,7 +237,7 @@ await useAsyncData('settings-page', async () => {
 
               <div class="space-y-2.5">
                 <UButton
-                  label="Sinkronkan Ulang Semua Akun"
+                  label="Resync All Accounts"
                   icon="i-lucide-refresh-cw"
                   color="info"
                   variant="subtle"
@@ -270,14 +248,14 @@ await useAsyncData('settings-page', async () => {
                   @click="triggerReindex"
                 />
                 <p class="text-[10px] text-muted leading-relaxed">
-                  Membaca ulang kuota dan isi tiap akun dari provider, lalu memperbarui
-                  index di database. Organisasi folder virtual tidak terpengaruh.
+                  Re-reads each account's quota and contents from the provider, then refreshes
+                  the database index. Your virtual folder layout is left untouched.
                 </p>
               </div>
             </div>
           </div>
 
-          <!-- Konfigurasi runtime backend: ditampilkan, bukan disunting -->
+          <!-- Backend runtime config: displayed, not editable -->
           <div class="p-6 rounded-3xl border border-default/80 bg-card shadow-sm space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div class="flex items-start gap-3.5">
@@ -285,18 +263,18 @@ await useAsyncData('settings-page', async () => {
                   <UIcon name="i-lucide-route" class="size-6" />
                 </div>
                 <div>
-                  <h3 class="font-bold text-sm text-highlighted">Konfigurasi Engine</h3>
+                  <h3 class="font-bold text-sm text-highlighted">Engine Configuration</h3>
                   <p class="text-xs text-muted mt-0.5 leading-relaxed max-w-xl">
-                    Nilai berikut dibaca backend dari environment saat proses start.
-                    Mengubahnya berarti menyunting <code class="font-mono">.env</code> lalu
-                    me-restart layanan — bukan lewat halaman ini.
+                    The backend reads these values from the environment at startup. Changing them
+                    means editing <code class="font-mono">.env</code> and restarting the service —
+                    not from this page.
                   </p>
                 </div>
               </div>
             </div>
 
             <div v-if="settings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Strategi routing aktif -->
+              <!-- Active routing strategy -->
               <div class="p-5 rounded-2xl border border-sky-500/30 bg-sky-500/[0.06] space-y-2">
                 <div class="flex items-center justify-between">
                   <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Smart Routing</span>
@@ -309,31 +287,31 @@ await useAsyncData('settings-page', async () => {
                 <p class="text-[11px] text-muted leading-relaxed">{{ activeStrategy.desc }}</p>
               </div>
 
-              <!-- Model penyimpanan -->
+              <!-- Storage model -->
               <div class="p-5 rounded-2xl border border-default/70 bg-elevated/20 space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Model Penyimpanan</span>
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Storage Model</span>
                   <UBadge :label="`Model ${settings.storage_model}`" color="primary" variant="subtle" size="xs" class="rounded-lg font-mono text-[10px]" />
                 </div>
                 <p class="text-[11px] text-muted leading-relaxed">
-                  Satu file disimpan utuh di satu akun (whole-file).
+                  Each file is stored whole on a single account (whole-file).
                   <template v-if="!settings.chunking">
-                    Pemecahan file lintas akun (Model B) belum tersedia, jadi file yang lebih
-                    besar dari sisa ruang akun terlowong akan ditolak.
+                    Splitting a file across accounts (Model B) is not available yet, so a file
+                    larger than the roomiest account's free space is rejected rather than split.
                   </template>
                 </p>
               </div>
 
-              <!-- Folder fisik -->
+              <!-- Physical folder -->
               <div class="p-5 rounded-2xl border border-default/70 bg-elevated/20 space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Folder Objek</span>
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Object Folder</span>
                   <code class="text-[10px] font-mono text-muted">RCLONE_BASE_DIR</code>
                 </div>
                 <code class="block font-mono text-sm text-emerald-400">{{ settings.remote_base_dir }}/</code>
                 <p class="text-[11px] text-muted leading-relaxed">
-                  Semua objek ditaruh rata di folder ini pada tiap akun. Struktur folder
-                  yang Anda lihat hidup di database, bukan di provider.
+                  Every object lands flat in this folder on each account. The folder structure
+                  you see lives in the database, not at the provider.
                 </p>
               </div>
 
@@ -345,18 +323,18 @@ await useAsyncData('settings-page', async () => {
                   <span class="font-bold text-sm text-highlighted">Stream-through</span>
                 </div>
                 <p class="text-[11px] text-muted leading-relaxed">
-                  Unggahan dan unduhan dialirkan langsung antara browser dan provider;
-                  server tak menyimpan salinan file.
+                  Uploads and downloads stream directly between the browser and the provider;
+                  the server keeps no copy of the file.
                 </p>
               </div>
             </div>
 
             <div v-else class="p-5 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] text-xs text-muted">
-              Konfigurasi backend tidak bisa dibaca. Periksa koneksi ke API.
+              Backend configuration could not be read. Check the API connection.
             </div>
           </div>
 
-          <!-- Ringkasan kapasitas -->
+          <!-- Capacity summary -->
           <div class="p-6 rounded-3xl border border-default/80 bg-card shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div class="flex items-start gap-3.5">
@@ -364,21 +342,21 @@ await useAsyncData('settings-page', async () => {
                   <UIcon name="i-lucide-database" class="size-6" />
                 </div>
                 <div>
-                  <h3 class="font-bold text-sm text-highlighted">Kapasitas Agregat</h3>
+                  <h3 class="font-bold text-sm text-highlighted">Aggregate Capacity</h3>
                   <p class="text-xs text-muted mt-0.5">
-                    {{ accountsStore.accounts.length }} akun terhubung,
-                    {{ accountsStore.activeAccounts.length }} aktif.
+                    {{ accountsStore.accounts.length }} accounts connected,
+                    {{ accountsStore.activeAccounts.length }} active.
                   </p>
                 </div>
               </div>
 
               <div class="flex items-center gap-6 font-mono text-xs">
                 <div>
-                  <span class="text-muted block text-[10px] uppercase tracking-wider">Terpakai</span>
+                  <span class="text-muted block text-[10px] uppercase tracking-wider">Used</span>
                   <span class="text-highlighted font-bold text-sm">{{ formatBytes(accountsStore.usedStorage) }}</span>
                 </div>
                 <div>
-                  <span class="text-muted block text-[10px] uppercase tracking-wider">Bebas</span>
+                  <span class="text-muted block text-[10px] uppercase tracking-wider">Free</span>
                   <span class="text-emerald-500 font-bold text-sm">{{ formatBytes(accountsStore.freeStorage) }}</span>
                 </div>
                 <div>

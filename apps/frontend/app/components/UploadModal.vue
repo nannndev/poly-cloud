@@ -134,14 +134,14 @@ async function processFiles(fileList: File[]) {
   const failed = results.filter(r => r instanceof Error)
   if (failed.length > 0) {
     toast.add({
-      title: `${failed.length} file gagal diunggah`,
+      title: `${failed.length} file${failed.length > 1 ? 's' : ''} failed to upload`,
       description: friendlyMessage(failed[0]),
       color: 'error'
     })
   } else {
     toast.add({
-      title: fileList.length > 1 ? `${fileList.length} file terunggah` : 'File terunggah',
-      description: 'Router memilih akun tujuan berdasarkan sisa ruang terbanyak.',
+      title: fileList.length > 1 ? `${fileList.length} files uploaded` : 'File uploaded',
+      description: 'The router picked the destination account with the most free space.',
       color: 'success'
     })
   }
@@ -229,8 +229,8 @@ function triggerFileInput() {
               <div class="min-w-0">
                 <p class="text-xs font-semibold text-white truncate">{{ recommendedAccount.label }}</p>
                 <p class="text-[10px] text-zinc-500">
-                  Sisa ruang terbanyak ({{ formatBytes(recommendedAccount.free_bytes) }}) — backend
-                  memutuskan tujuan final saat unggahan berjalan.
+                  Most free space ({{ formatBytes(recommendedAccount.free_bytes) }}) — the backend
+                  decides the final destination as the upload runs.
                 </p>
               </div>
             </div>
@@ -241,7 +241,7 @@ function triggerFileInput() {
             >
               <UIcon name="i-lucide-triangle-alert" class="size-4 text-amber-400 shrink-0" />
               <p class="text-[11px] text-zinc-300">
-                Belum ada akun aktif. Hubungkan akun dulu sebelum mengunggah.
+                No active account yet. Connect one before uploading.
               </p>
             </div>
           </div>
@@ -279,7 +279,7 @@ function triggerFileInput() {
             Drag files here or <span class="text-emerald-400 underline underline-offset-4 decoration-emerald-400/40 hover:decoration-emerald-400">browse from computer</span>
           </p>
           <p class="text-xs text-zinc-400 text-center mt-1 max-w-sm">
-            File dialirkan langsung ke provider — tak ada salinan yang mengendap di server.
+            Files stream straight to the provider — no copy is ever spooled on the server.
           </p>
         </div>
 
@@ -349,7 +349,7 @@ function triggerFileInput() {
                         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-red-500/15 text-red-400 font-medium text-[10px] border border-red-500/25"
                       >
                         <UIcon name="i-lucide-circle-alert" class="size-3" />
-                        Gagal
+                        Failed
                       </span>
 
                       <span
@@ -357,7 +357,7 @@ function triggerFileInput() {
                         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-medium text-[10px] border border-white/[0.08]"
                       >
                         <UIcon name="i-lucide-ban" class="size-3" />
-                        Dibatalkan
+                        Cancelled
                       </span>
 
                       <span
@@ -422,7 +422,7 @@ function triggerFileInput() {
                   <button
                     v-if="job.status === 'uploading' || job.status === 'routing'"
                     type="button"
-                    title="Batalkan upload"
+                    title="Cancel upload"
                     class="flex size-7 items-center justify-center rounded-lg bg-zinc-800/60 hover:bg-rose-500/20 hover:text-rose-400 text-zinc-400 border border-white/[0.06] transition-all cursor-pointer"
                     @click="filesStore.cancelUpload(job.id)"
                   >
@@ -432,7 +432,7 @@ function triggerFileInput() {
                   <button
                     v-else
                     type="button"
-                    title="Singkirkan dari daftar"
+                    title="Dismiss from list"
                     class="flex size-7 items-center justify-center rounded-lg bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-all cursor-pointer"
                     @click="filesStore.dismissJob(job.id)"
                   >
@@ -471,7 +471,7 @@ function triggerFileInput() {
       <div class="flex items-center justify-between w-full text-zinc-400">
         <span class="text-[11px] text-zinc-500 flex items-center gap-2">
           <UIcon name="i-lucide-shield-check" class="size-4 text-emerald-400" />
-          Zero-Spool direct multi-cloud streaming with SHA-256 validation.
+          Streamed straight to the provider — nothing is spooled on the server.
         </span>
         <button
           type="button"

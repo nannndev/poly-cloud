@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import type { CommandPaletteGroup, CommandPaletteItem, NavigationMenuItem } from '@nuxt/ui'
 
-const route = useRoute()
 const accountsStore = useAccountsStore()
 const filesStore = useFilesStore()
 const { formatBytes } = useFormatters()
+const { status: healthStatus, label: healthLabel, dotClass: healthDot, check: checkHealth } = useBackendHealth()
 
 const isSidebarOpen = ref(false)
+
+// Status engine dipakai di seluruh halaman, jadi diperiksa sekali di layout dan
+// disegarkan berkala — indikator yang tak pernah berubah sama saja dengan hiasan.
+onMounted(() => {
+  void checkHealth()
+  const timer = setInterval(() => { void checkHealth() }, 30_000)
+  onBeforeUnmount(() => clearInterval(timer))
+})
 
 const navLinks = computed<NavigationMenuItem[]>(() => [
   {
@@ -162,13 +170,24 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
       <template #footer="{ collapsed }">
         <div class="space-y-1.5">
           <UserMenu :collapsed="collapsed" />
-          <div v-if="!collapsed" class="px-2 pt-1 border-t border-white/[0.05] flex items-center justify-between text-[10px] text-zinc-500 font-mono select-none">
+          <!-- Status nyata dari /healthz; klik untuk memeriksa ulang. -->
+          <button
+            v-if="!collapsed"
+            type="button"
+            :title="`${healthLabel} — click to re-check`"
+            class="w-full px-2 pt-1 border-t border-white/[0.05] flex items-center justify-between text-[10px] text-zinc-500 font-mono cursor-pointer hover:text-zinc-300 transition-colors"
+            @click="checkHealth"
+          >
             <span class="flex items-center gap-1.5">
-              <span class="size-1.5 rounded-full bg-emerald-400" />
-              Engine Online
+              <span class="size-1.5 rounded-full" :class="healthDot" />
+              {{ healthLabel }}
             </span>
-            <span class="px-1.5 py-0.5 rounded bg-zinc-800/60 text-zinc-400 border border-white/[0.06] text-[9px] font-medium">v1.0.4</span>
-          </div>
+            <UIcon
+              v-if="healthStatus !== 'online'"
+              name="i-lucide-refresh-cw"
+              class="size-3 text-zinc-500"
+            />
+          </button>
         </div>
       </template>
     </UDashboardSidebar>

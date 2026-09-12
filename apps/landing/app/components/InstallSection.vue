@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const command = `git clone https://github.com/nannndev/poly-cloud
+import { REPO_URL } from '~/config/site'
+
+const command = `git clone ${REPO_URL}
 cd poly-cloud
 cp .env.example .env
 make dev`
@@ -22,25 +24,25 @@ onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>
-  <section id="pasang" class="border-b border-white/[0.06] scroll-mt-16">
+  <section id="install" class="border-b border-white/[0.06] scroll-mt-16">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
       <div class="grid gap-10 lg:grid-cols-[1fr_1.15fr] lg:items-start lg:gap-14">
         <div>
           <h2 class="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-            Jalankan di mesin Anda sendiri
+            Run it on your own machine
           </h2>
           <p class="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-zinc-400">
-            Seluruh sistem berjalan lewat Docker Compose: API, antarmuka, PostgreSQL,
-            dan rclone. Tidak ada layanan pihak ketiga yang perlu didaftari.
+            The whole system runs through Docker Compose: the API, the interface,
+            PostgreSQL, and rclone. There is no third-party service to sign up for.
           </p>
 
           <dl class="mt-8 space-y-4 text-sm">
             <div class="flex gap-3">
-              <dt class="w-28 shrink-0 text-zinc-500">Prasyarat</dt>
-              <dd class="text-zinc-300">Docker dan Docker Compose</dd>
+              <dt class="w-28 shrink-0 text-zinc-500">Requirements</dt>
+              <dd class="text-zinc-300">Docker and Docker Compose</dd>
             </div>
             <div class="flex gap-3">
-              <dt class="w-28 shrink-0 text-zinc-500">Antarmuka</dt>
+              <dt class="w-28 shrink-0 text-zinc-500">Interface</dt>
               <dd class="font-mono text-zinc-300">localhost:3000</dd>
             </div>
             <div class="flex gap-3">
@@ -50,9 +52,9 @@ onBeforeUnmount(() => clearTimeout(timer))
           </dl>
 
           <p class="mt-8 max-w-[48ch] text-sm leading-relaxed text-zinc-500">
-            Penyedia berbasis kunci seperti S3 langsung bisa dipakai. Untuk Google Drive,
-            Dropbox, dan OneDrive, daftarkan aplikasi OAuth Anda sendiri lalu isi kredensialnya
-            di berkas <code class="font-mono text-zinc-400">.env</code>.
+            Key-based providers like S3 work straight away. For Google Drive, Dropbox, and
+            OneDrive, register your own OAuth app and put its credentials in the
+            <code class="font-mono text-zinc-400">.env</code> file.
           </p>
         </div>
 
@@ -63,7 +65,7 @@ onBeforeUnmount(() => clearTimeout(timer))
               type="button"
               class="rounded-lg px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white"
               @click="copy"
-            >{{ copied ? 'Tersalin' : 'Salin' }}</button>
+            >{{ copied ? 'Copied' : 'Copy' }}</button>
           </div>
           <pre class="overflow-x-auto px-5 py-5 font-mono text-[13px] leading-relaxed text-zinc-300"><code>{{ command }}</code></pre>
         </div>

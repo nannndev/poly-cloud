@@ -16,8 +16,11 @@ export default defineNuxtConfig({
   nitro: {
     // Seluruh rute dirender saat build sehingga hasilnya berupa berkas statis.
     prerender: {
-      routes: ['/'],
-      crawlLinks: true
+      routes: ['/', '/contributors', '/support'],
+      crawlLinks: true,
+      // Data GitHub diambil saat build. Bila API sedang membatasi kuota, halaman
+      // harus tetap terbit dengan nilai bawaannya alih-alih menggagalkan deploy.
+      failOnError: false
     }
   },
 

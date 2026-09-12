@@ -19,16 +19,16 @@ export class ApiError extends Error {
 
 /** Pesan yang layak dibaca user untuk tiap error code. */
 const FRIENDLY: Record<ApiErrorCode, string> = {
-  NO_ROOM: 'Tidak ada akun yang punya ruang cukup untuk file ini.',
-  ACCOUNT_NEEDS_RECONNECT: 'Akun perlu dihubungkan ulang — izin aksesnya sudah tidak berlaku.',
-  PROVIDER_ERROR: 'Provider menolak permintaan ini.',
-  NOT_FOUND: 'Data yang diminta tidak ditemukan.',
-  RATE_LIMITED: 'Provider sedang membatasi permintaan. Coba lagi sebentar lagi.',
-  PATH_EXISTS: 'Sudah ada item dengan nama itu di lokasi ini.',
-  FOLDER_NOT_EMPTY: 'Folder masih berisi. Hapus isinya dulu atau pakai hapus rekursif.',
-  INVALID_ARGUMENT: 'Permintaan tidak valid.',
-  UNSUPPORTED: 'Operasi ini belum didukung.',
-  INTERNAL: 'Terjadi kesalahan di server.'
+  NO_ROOM: 'No connected account has enough free space for this file.',
+  ACCOUNT_NEEDS_RECONNECT: 'This account needs to be reconnected — its access has expired.',
+  PROVIDER_ERROR: 'The provider rejected this request.',
+  NOT_FOUND: 'The requested item was not found.',
+  RATE_LIMITED: 'The provider is rate limiting requests. Try again in a moment.',
+  PATH_EXISTS: 'An item with that name already exists here.',
+  FOLDER_NOT_EMPTY: 'This folder is not empty. Empty it first, or delete recursively.',
+  INVALID_ARGUMENT: 'That request is not valid.',
+  UNSUPPORTED: 'This operation is not supported yet.',
+  INTERNAL: 'Something went wrong on the server.'
 }
 
 export function friendlyMessage(err: unknown): string {
@@ -38,7 +38,7 @@ export function friendlyMessage(err: unknown): string {
   if (err instanceof Error && err.message) {
     return err.message
   }
-  return 'Terjadi kesalahan yang tidak terduga.'
+  return 'An unexpected error occurred.'
 }
 
 /**
@@ -59,7 +59,7 @@ export function useApi() {
         throw new ApiError(body.error.code, body.error.message, status)
       }
       // Backend tak terjangkau / respons bukan JSON kontrak kita.
-      throw new ApiError('INTERNAL', err?.message || 'Tidak bisa menghubungi server', status)
+      throw new ApiError('INTERNAL', err?.message || 'Could not reach the server', status)
     }
   }
 

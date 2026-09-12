@@ -3,48 +3,48 @@
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
       <div class="max-w-2xl">
         <h2 class="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-          Ruang penyimpanan Anda sebenarnya besar. Masalahnya terpotong-potong.
+          You already have plenty of storage. It's just scattered.
         </h2>
         <p class="mt-4 max-w-[60ch] text-[15px] leading-relaxed text-zinc-400">
-          Satu akun penuh sementara yang lain masih kosong. Mencari satu berkas berarti
-          membuka empat situs. Poly Cloud menghilangkan sekat itu tanpa memindahkan
-          apa pun keluar dari penyedia asalnya.
+          One account fills up while another sits empty. Finding a single file means
+          opening four different sites. Poly Cloud removes those walls without moving
+          anything out of the provider it already lives on.
         </p>
       </div>
 
       <div class="mt-12 grid gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06] sm:grid-cols-2">
         <div class="bg-ink-850 p-7">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Tanpa Poly Cloud</p>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Without Poly Cloud</p>
           <ul class="mt-5 space-y-3.5 text-sm text-zinc-400">
             <li class="flex gap-3">
               <span class="mt-2 size-1 shrink-0 rounded-full bg-zinc-600" />
-              Membuka empat situs untuk mencari satu berkas
+              Opening four sites to track down one file
             </li>
             <li class="flex gap-3">
               <span class="mt-2 size-1 shrink-0 rounded-full bg-zinc-600" />
-              Menebak sendiri akun mana yang masih muat
+              Guessing which account still has room
             </li>
             <li class="flex gap-3">
               <span class="mt-2 size-1 shrink-0 rounded-full bg-zinc-600" />
-              Struktur folder berbeda-beda di tiap penyedia
+              A different folder structure on every provider
             </li>
           </ul>
         </div>
 
         <div class="bg-ink-850 p-7">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-400">Dengan Poly Cloud</p>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-400">With Poly Cloud</p>
           <ul class="mt-5 space-y-3.5 text-sm text-zinc-300">
             <li class="flex gap-3">
               <span class="mt-2 size-1 shrink-0 rounded-full bg-accent-500" />
-              Satu daftar berkas untuk semua akun sekaligus
+              One file list across every account at once
             </li>
             <li class="flex gap-3">
               <span class="mt-2 size-1 shrink-0 rounded-full bg-accent-500" />
-              Tujuan unggahan dipilihkan otomatis oleh sistem
+              Upload destinations chosen for you automatically
             </li>
             <li class="flex gap-3">
               <span class="mt-2 size-1 shrink-0 rounded-full bg-accent-500" />
-              Folder Anda sendiri, lepas dari struktur penyedia
+              Your own folders, independent of any provider
             </li>
           </ul>
         </div>

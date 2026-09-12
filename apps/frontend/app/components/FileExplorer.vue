@@ -44,9 +44,24 @@ const renamedFileName = ref('')
 const isDeleteFileModalOpen = ref(false)
 const fileToDelete = ref<FileEntry | null>(null)
 
+// VFS: pindahkan folder ke induk lain
+const isMoveFolderModalOpen = ref(false)
+const folderToMove = ref<FolderEntry | null>(null)
+const targetParentFolderId = ref<string | null>(null)
+
+// Aksi massal atas file terpilih
+const isBulkDeleteOpen = ref(false)
+const isBulkMoveOpen = ref(false)
+const isBulkMigrateOpen = ref(false)
+const bulkTargetFolderId = ref<string | null>(null)
+const bulkTargetAccountId = ref<string>('')
+
 // Status bersama untuk operasi yang menunggu backend.
 const isBusy = ref(false)
 const actionError = ref('')
+
+// Jangkar shift-click: file terakhir yang dipilih lewat klik biasa.
+const lastClickedId = ref<string | null>(null)
 
 const categories = [
   { id: 'all', label: 'All Items', icon: 'i-lucide-layers' },
@@ -117,6 +132,11 @@ function getFolderMenuItems(folder: FolderEntry): DropdownMenuItem[][] {
         onSelect: () => openRenameFolder(folder)
       },
       {
+        label: 'Move Folder...',
+        icon: 'i-lucide-folder-input',
+        onSelect: () => openMoveFolder(folder)
+      },
+      {
         label: 'Copy Folder Path',
         icon: 'i-lucide-copy',
         onSelect: () => navigator.clipboard?.writeText(folder.path)
@@ -165,7 +185,7 @@ async function confirmMove() {
     // Transfer data nyata antar provider — beda dari pindah folder virtual.
     await filesStore.moveFile(selectedFile.value.id, targetMoveAccount.value)
     isMoveModalOpen.value = false
-    toast.add({ title: 'File dipindah ke akun lain', color: 'success' })
+    toast.add({ title: 'File migrated to another account', color: 'success' })
   } catch (err) {
     actionError.value = friendlyMessage(err)
   } finally {
@@ -192,7 +212,7 @@ function openNewFolder() {
 
 async function confirmCreateFolder() {
   if (!newFolderName.value.trim()) {
-    newFolderError.value = 'Masukkan nama folder.'
+    newFolderError.value = 'Enter a folder name.'
     return
   }
   isBusy.value = true
@@ -243,7 +263,7 @@ async function confirmDeleteFolder(recursive: boolean) {
   try {
     await filesStore.deleteFolder(folderToDelete.value.id, recursive)
     isDeleteFolderModalOpen.value = false
-    toast.add({ title: 'Folder dihapus', color: 'success' })
+    toast.add({ title: 'Folder deleted', color: 'success' })
   } catch (err) {
     actionError.value = friendlyMessage(err)
   } finally {
@@ -309,12 +329,191 @@ async function confirmDeleteFile() {
   try {
     await filesStore.deleteFile(fileToDelete.value.id)
     isDeleteFileModalOpen.value = false
-    toast.add({ title: 'File dihapus', color: 'success' })
+    toast.add({ title: 'File deleted', color: 'success' })
   } catch (err) {
     actionError.value = friendlyMessage(err)
   } finally {
     isBusy.value = false
   }
+}
+
+// VFS: pindahkan folder ke induk lain
+function openMoveFolder(folder: FolderEntry) {
+  folderToMove.value = folder
+  targetParentFolderId.value = folder.parent_id
+  actionError.value = ''
+  isMoveFolderModalOpen.value = true
+}
+
+/**
+ * Tujuan yang sah bagi folder yang sedang dipindah: bukan dirinya sendiri, bukan
+ * turunannya (itu akan memutus pohon), dan bukan induknya yang sekarang.
+ */
+const moveFolderOptions = computed(() => {
+  const moving = folderToMove.value
+  if (!moving) return []
+  const prefix = moving.path.endsWith('/') ? moving.path : `${moving.path}/`
+  return filesStore.allFoldersHierarchical.filter(item =>
+    item.id !== moving.id
+    && item.id !== moving.parent_id
+    && !item.path.startsWith(prefix))
+})
+
+async function confirmMoveFolder() {
+  if (!folderToMove.value) return
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    await filesStore.moveFolder(folderToMove.value.id, targetParentFolderId.value)
+    isMoveFolderModalOpen.value = false
+    toast.add({ title: 'Folder moved', color: 'success' })
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
+  }
+}
+
+// ---- Pilihan & aksi massal ----
+
+/**
+ * Klik pada baris file: shift memperluas pilihan dari jangkar terakhir, meta/ctrl
+ * menambah satu per satu, klik biasa membuka pratinjau seperti sebelumnya.
+ */
+function handleRowClick(file: FileEntry, event: MouseEvent) {
+  if (event.shiftKey && lastClickedId.value) {
+    filesStore.selectRange(lastClickedId.value, file.id)
+    return
+  }
+  if (event.metaKey || event.ctrlKey) {
+    filesStore.toggleSelection(file.id)
+    lastClickedId.value = file.id
+    return
+  }
+  openPreview(file)
+}
+
+function handleCheckboxClick(file: FileEntry, event: MouseEvent) {
+  if (event.shiftKey && lastClickedId.value) {
+    filesStore.selectRange(lastClickedId.value, file.id)
+  } else {
+    filesStore.toggleSelection(file.id)
+  }
+  lastClickedId.value = file.id
+}
+
+/** Laporkan hasil satu aksi massal: sebagian gagal tetap harus terlihat. */
+function reportBulk(
+  res: { ok: number; failed: { id: string; error: unknown }[] },
+  verb: string
+) {
+  if (res.failed.length === 0) {
+    toast.add({ title: `${res.ok} file${res.ok === 1 ? '' : 's'} ${verb}`, color: 'success' })
+    return
+  }
+  toast.add({
+    title: `${res.failed.length} of ${res.ok + res.failed.length} could not be ${verb}`,
+    description: friendlyMessage(res.failed[0]!.error),
+    color: res.ok > 0 ? 'warning' : 'error'
+  })
+}
+
+function openBulkMove() {
+  bulkTargetFolderId.value = filesStore.currentFolderId
+  isBulkMoveOpen.value = true
+}
+
+function openBulkMigrate() {
+  bulkTargetAccountId.value = accountsStore.activeAccounts[0]?.id || ''
+  isBulkMigrateOpen.value = true
+}
+
+async function confirmBulkDelete() {
+  isBusy.value = true
+  try {
+    reportBulk(await filesStore.deleteSelected(), 'deleted')
+    isBulkDeleteOpen.value = false
+  } finally {
+    isBusy.value = false
+  }
+}
+
+async function confirmBulkMove() {
+  isBusy.value = true
+  try {
+    reportBulk(await filesStore.moveSelectedToFolder(bulkTargetFolderId.value), 'moved')
+    isBulkMoveOpen.value = false
+  } finally {
+    isBusy.value = false
+  }
+}
+
+async function confirmBulkMigrate() {
+  if (!bulkTargetAccountId.value) return
+  isBusy.value = true
+  try {
+    reportBulk(await filesStore.migrateSelected(bulkTargetAccountId.value), 'migrated')
+    isBulkMigrateOpen.value = false
+  } finally {
+    isBusy.value = false
+  }
+}
+
+function downloadSelected() {
+  for (const file of filesStore.selectedFiles) handleDownload(file)
+  filesStore.clearSelection()
+}
+
+const bulkMigrateOptions = computed(() =>
+  accountsStore.activeAccounts.map(a => ({
+    value: a.id,
+    label: `${a.label} (${formatBytes(a.free_bytes)} free)`
+  })))
+
+// ---- Urutan & halaman ----
+
+/** Klik header kolom: kolom sama membalik arah, kolom lain mulai menaik. */
+function sortByColumn(column: 'name' | 'size' | 'modified') {
+  if (filesStore.sortBy === column) {
+    filesStore.sortDirection = filesStore.sortDirection === 'asc' ? 'desc' : 'asc'
+  } else {
+    filesStore.sortBy = column
+    filesStore.sortDirection = 'asc'
+  }
+}
+
+function sortIcon(column: 'name' | 'size' | 'modified') {
+  if (filesStore.sortBy !== column) return 'i-lucide-chevrons-up-down'
+  return filesStore.sortDirection === 'asc' ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'
+}
+
+// Penyaring & urutan dikerjakan backend, jadi tiap perubahan memuat ulang dari
+// halaman pertama — bukan menyaring ulang daftar yang kebetulan sedang tampil.
+watch(
+  () => [filesStore.selectedAccountId, filesStore.selectedCategory,
+         filesStore.sortBy, filesStore.sortDirection],
+  () => { void filesStore.applyFilters() }
+)
+
+async function retryLoad() {
+  await filesStore.loadAll().catch(() => null)
+}
+
+/** Daftar kosong = tak ada folder maupun file yang bisa dirender. */
+const isListEmpty = computed(() =>
+  filesStore.currentFolders.length === 0 && filesStore.filteredFiles.length === 0)
+
+/** Kosong karena penyaring, bukan karena folder memang kosong — beda pesannya. */
+const hasActiveFilter = computed(() =>
+  filesStore.searchQuery.trim() !== ''
+  || filesStore.selectedCategory !== 'all'
+  || filesStore.selectedAccountId !== 'all')
+
+function clearFilters() {
+  filesStore.searchQuery = ''
+  filesStore.selectedCategory = 'all'
+  filesStore.selectedAccountId = 'all'
+  void filesStore.applyFilters()
 }
 
 // Pencarian dijalankan backend atas index DB; debounce menahan permintaan
@@ -323,12 +522,9 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined
 watch(() => filesStore.searchQuery, () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    void filesStore.runSearch()
+    // Kata kunci baru berarti kumpulan hasil baru — mulai dari halaman pertama.
+    void filesStore.applyFilters()
   }, 300)
-})
-
-watch(() => filesStore.selectedAccountId, () => {
-  if (filesStore.searchQuery.trim()) void filesStore.runSearch()
 })
 
 onBeforeUnmount(() => clearTimeout(searchTimer))
@@ -379,7 +575,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <!-- Quick Actions in Bar: New Folder & Summary Pill -->
       <div class="flex items-center gap-2 shrink-0">
         <span class="text-[11px] text-zinc-400 font-mono hidden md:inline">
-          {{ filesStore.currentFolders.length }} folders, {{ filesStore.filteredFiles.length }} files
+          {{ filesStore.currentFolders.length }} folders, {{ filesStore.totalFiles }} files
         </span>
 
         <button
@@ -489,6 +685,67 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       </div>
     </div>
 
+    <!-- Bulk action bar: muncul hanya saat ada yang dipilih -->
+    <div
+      v-if="filesStore.selectedFileIds.length > 0"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] shadow-xs"
+    >
+      <div class="flex items-center gap-3 text-xs">
+        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-semibold">
+          <UIcon name="i-lucide-check-square" class="size-3.5" />
+          {{ filesStore.selectedFileIds.length }} selected
+        </span>
+        <span class="text-zinc-400 font-mono">{{ formatBytes(filesStore.selectedBytes) }}</span>
+        <button
+          type="button"
+          class="text-zinc-400 hover:text-white underline underline-offset-4 cursor-pointer"
+          @click="filesStore.clearSelection()"
+        >
+          Clear
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          label="Download"
+          icon="i-lucide-download"
+          color="neutral"
+          variant="subtle"
+          size="xs"
+          class="rounded-xl font-semibold"
+          @click="downloadSelected"
+        />
+        <UButton
+          label="Move to Folder"
+          icon="i-lucide-folder-input"
+          color="neutral"
+          variant="subtle"
+          size="xs"
+          class="rounded-xl font-semibold"
+          @click="openBulkMove"
+        />
+        <UButton
+          label="Migrate"
+          icon="i-lucide-arrow-right-left"
+          color="neutral"
+          variant="subtle"
+          size="xs"
+          class="rounded-xl font-semibold"
+          :disabled="accountsStore.activeAccounts.length === 0"
+          @click="openBulkMigrate"
+        />
+        <UButton
+          label="Delete"
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="subtle"
+          size="xs"
+          class="rounded-xl font-semibold"
+          @click="isBulkDeleteOpen = true"
+        />
+      </div>
+    </div>
+
     <!-- Files View: Table Mode -->
     <div
       v-if="filesStore.viewMode === 'table'"
@@ -498,10 +755,34 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="border-b border-white/[0.06] bg-[#111114] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
-              <th class="py-3.5 px-5">Name & Virtual Path</th>
+              <th class="py-3.5 pl-5 pr-1 w-9">
+                <UCheckbox
+                  :model-value="filesStore.allVisibleSelected"
+                  :indeterminate="filesStore.selectedFileIds.length > 0 && !filesStore.allVisibleSelected"
+                  aria-label="Select all files on this page"
+                  :disabled="filesStore.filteredFiles.length === 0"
+                  @update:model-value="filesStore.toggleSelectAll()"
+                />
+              </th>
+              <th class="py-3.5 px-4">
+                <button type="button" class="inline-flex items-center gap-1.5 uppercase tracking-wider hover:text-white transition-colors cursor-pointer" @click="sortByColumn('name')">
+                  Name &amp; Virtual Path
+                  <UIcon :name="sortIcon('name')" class="size-3" :class="filesStore.sortBy === 'name' ? 'text-emerald-400' : 'text-zinc-600'" />
+                </button>
+              </th>
               <th class="py-3.5 px-4">Storage Provider</th>
-              <th class="py-3.5 px-4">Size</th>
-              <th class="py-3.5 px-4">Last Modified</th>
+              <th class="py-3.5 px-4">
+                <button type="button" class="inline-flex items-center gap-1.5 uppercase tracking-wider hover:text-white transition-colors cursor-pointer" @click="sortByColumn('size')">
+                  Size
+                  <UIcon :name="sortIcon('size')" class="size-3" :class="filesStore.sortBy === 'size' ? 'text-emerald-400' : 'text-zinc-600'" />
+                </button>
+              </th>
+              <th class="py-3.5 px-4">
+                <button type="button" class="inline-flex items-center gap-1.5 uppercase tracking-wider hover:text-white transition-colors cursor-pointer" @click="sortByColumn('modified')">
+                  Last Modified
+                  <UIcon :name="sortIcon('modified')" class="size-3" :class="filesStore.sortBy === 'modified' ? 'text-emerald-400' : 'text-zinc-600'" />
+                </button>
+              </th>
               <th class="py-3.5 px-5 text-right">Actions</th>
             </tr>
           </thead>
@@ -513,8 +794,11 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               class="hover:bg-[#141418] transition-colors group cursor-pointer"
               @click="filesStore.navigateToFolder(folder.id)"
             >
+              <!-- Folder tak ikut pilihan massal: aksinya beda dari file. -->
+              <td class="py-3 pl-5 pr-1" />
+
               <!-- Folder Name & Icon -->
-              <td class="py-3 px-5">
+              <td class="py-3 px-4">
                 <div class="flex items-center gap-3.5 min-w-[260px]">
                   <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform shadow-xs">
                     <UIcon name="i-lucide-folder" class="size-5 fill-amber-500/20" />
@@ -588,11 +872,20 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             <tr
               v-for="file in filesStore.filteredFiles"
               :key="file.id"
-              class="hover:bg-[#141418] transition-colors group cursor-pointer"
-              @click="openPreview(file)"
+              class="transition-colors group cursor-pointer"
+              :class="filesStore.isSelected(file.id) ? 'bg-emerald-500/[0.07]' : 'hover:bg-[#141418]'"
+              @click="handleRowClick(file, $event)"
             >
+              <td class="py-3 pl-5 pr-1" @click.stop>
+                <UCheckbox
+                  :model-value="filesStore.isSelected(file.id)"
+                  :aria-label="`Select ${file.name}`"
+                  @click="handleCheckboxClick(file, $event)"
+                />
+              </td>
+
               <!-- Name & Icon -->
-              <td class="py-3 px-5">
+              <td class="py-3 px-4">
                 <div class="flex items-center gap-3.5 min-w-[260px]">
                   <div class="p-2 rounded-xl bg-[#15151a] shrink-0 border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
                     <UIcon
@@ -672,39 +965,71 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               </td>
             </tr>
 
-            <!-- Empty State -->
-            <tr v-if="filesStore.currentFolders.length === 0 && filesStore.filteredFiles.length === 0">
-              <td colspan="5" class="py-16 text-center text-zinc-400">
-                <div class="flex flex-col items-center justify-center gap-3">
-                  <div class="p-4 rounded-3xl bg-[#121215] border border-white/[0.08]">
-                    <UIcon name="i-lucide-folder-open" class="size-10 text-zinc-500" />
-                  </div>
-                  <div>
-                    <h4 class="font-bold text-sm text-zinc-200">This virtual folder is empty</h4>
-                    <p class="text-xs text-zinc-400 mt-0.5">Upload a file or create a subfolder here to get started</p>
-                  </div>
-                  <div class="flex items-center gap-2 mt-2">
-                    <button
-                      type="button"
-                      class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-xs"
+            <!-- Memuat / gagal / kosong: tiga keadaan berbeda, bukan satu. -->
+            <tr v-if="isListEmpty">
+              <td colspan="6" class="p-0">
+                <StateNotice
+                  v-if="filesStore.isLoading || filesStore.isSearching"
+                  variant="loading"
+                  title="Loading files..."
+                />
+                <StateNotice
+                  v-else-if="filesStore.loadError"
+                  variant="error"
+                  title="Could not load your files"
+                  :description="filesStore.loadError"
+                  @retry="retryLoad"
+                />
+                <StateNotice
+                  v-else-if="hasActiveFilter"
+                  title="No files match these filters"
+                  description="Try a different category, account, or search term."
+                  icon="i-lucide-search-x"
+                >
+                  <template #actions>
+                    <UButton
+                      label="Clear filters"
+                      icon="i-lucide-filter-x"
+                      color="neutral"
+                      variant="subtle"
+                      size="xs"
+                      class="rounded-xl font-semibold"
+                      @click="clearFilters"
+                    />
+                  </template>
+                </StateNotice>
+                <StateNotice
+                  v-else
+                  title="This virtual folder is empty"
+                  description="Upload a file or create a subfolder here to get started"
+                >
+                  <template #actions>
+                    <UButton
+                      label="Upload File"
+                      icon="i-lucide-upload-cloud"
+                      color="primary"
+                      size="xs"
+                      class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
                       @click="filesStore.isUploadModalOpen = true"
-                    >
-                      Upload File
-                    </button>
-                    <button
-                      type="button"
-                      class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#16161b] hover:bg-[#1c1c22] text-zinc-300 border border-white/[0.08] transition-all cursor-pointer shadow-xs"
+                    />
+                    <UButton
+                      label="New Folder"
+                      icon="i-lucide-folder-plus"
+                      color="neutral"
+                      variant="subtle"
+                      size="xs"
+                      class="rounded-xl font-semibold"
                       @click="openNewFolder"
-                    >
-                      New Folder
-                    </button>
-                  </div>
-                </div>
+                    />
+                  </template>
+                </StateNotice>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <ExplorerPager />
     </div>
 
     <!-- Files View: Grid Mode -->
@@ -756,7 +1081,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <div class="space-y-2.5">
         <h3 v-if="filesStore.currentFolders.length > 0" class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
           <UIcon name="i-lucide-files" class="size-3.5 text-emerald-400" />
-          Files ({{ filesStore.filteredFiles.length }})
+          Files ({{ filesStore.totalFiles }})
         </h3>
 
         <div
@@ -766,17 +1091,31 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <div
             v-for="file in filesStore.filteredFiles"
             :key="file.id"
-            class="flex flex-col justify-between p-4 rounded-3xl border border-white/[0.08] bg-[#111114] hover:border-emerald-500/30 hover:bg-[#141418] transition-all group cursor-pointer shadow-xs"
-            @click="openPreview(file)"
+            class="flex flex-col justify-between p-4 rounded-3xl border transition-all group cursor-pointer shadow-xs"
+            :class="filesStore.isSelected(file.id)
+              ? 'border-emerald-500/50 bg-emerald-500/[0.07]'
+              : 'border-white/[0.08] bg-[#111114] hover:border-emerald-500/30 hover:bg-[#141418]'"
+            @click="handleRowClick(file, $event)"
           >
             <div class="space-y-3">
               <div class="flex items-start justify-between">
-                <div class="p-2.5 rounded-2xl bg-[#16161b] border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
-                  <UIcon
-                    :name="getFileIcon(file.mime, file.name).icon"
-                    class="size-6"
-                    :class="getFileIcon(file.mime, file.name).color"
-                  />
+                <div class="flex items-center gap-2">
+                  <span @click.stop>
+                    <UCheckbox
+                      :model-value="filesStore.isSelected(file.id)"
+                      :aria-label="`Select ${file.name}`"
+                      class="transition-opacity"
+                      :class="filesStore.isSelected(file.id) ? '' : 'opacity-0 group-hover:opacity-100'"
+                      @click="handleCheckboxClick(file, $event)"
+                    />
+                  </span>
+                  <div class="p-2.5 rounded-2xl bg-[#16161b] border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
+                    <UIcon
+                      :name="getFileIcon(file.mime, file.name).icon"
+                      class="size-6"
+                      :class="getFileIcon(file.mime, file.name).color"
+                    />
+                  </div>
                 </div>
 
                 <div @click.stop>
@@ -822,17 +1161,67 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           </div>
         </div>
 
-        <div v-else-if="filesStore.currentFolders.length === 0" class="py-16 text-center text-zinc-400">
-          <div class="flex flex-col items-center justify-center gap-3">
-            <div class="p-4 rounded-3xl bg-[#121215] border border-white/[0.08]">
-              <UIcon name="i-lucide-folder-open" class="size-10 text-zinc-500" />
-            </div>
-            <div>
-              <h4 class="font-bold text-sm text-zinc-200">This virtual folder is empty</h4>
-              <p class="text-xs text-zinc-400 mt-0.5">Upload a file or create a subfolder here to get started</p>
-            </div>
-          </div>
-        </div>
+        <template v-else-if="filesStore.currentFolders.length === 0">
+          <StateNotice
+            v-if="filesStore.isLoading || filesStore.isSearching"
+            variant="loading"
+            title="Loading files..."
+          />
+          <StateNotice
+            v-else-if="filesStore.loadError"
+            variant="error"
+            title="Could not load your files"
+            :description="filesStore.loadError"
+            @retry="retryLoad"
+          />
+          <StateNotice
+            v-else-if="hasActiveFilter"
+            title="No files match these filters"
+            description="Try a different category, account, or search term."
+            icon="i-lucide-search-x"
+          >
+            <template #actions>
+              <UButton
+                label="Clear filters"
+                icon="i-lucide-filter-x"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                class="rounded-xl font-semibold"
+                @click="clearFilters"
+              />
+            </template>
+          </StateNotice>
+          <StateNotice
+            v-else
+            title="This virtual folder is empty"
+            description="Upload a file or create a subfolder here to get started"
+          >
+            <template #actions>
+              <UButton
+                label="Upload File"
+                icon="i-lucide-upload-cloud"
+                color="primary"
+                size="xs"
+                class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                @click="filesStore.isUploadModalOpen = true"
+              />
+              <UButton
+                label="New Folder"
+                icon="i-lucide-folder-plus"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                class="rounded-xl font-semibold"
+                @click="openNewFolder"
+              />
+            </template>
+          </StateNotice>
+        </template>
+      </div>
+
+      <div v-if="filesStore.totalFiles > 0" class="rounded-2xl border border-white/[0.08] bg-[#0c0c0e] overflow-hidden">
+        <ExplorerPager />
       </div>
     </div>
 
@@ -1012,12 +1401,12 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1.5">
             <div class="flex items-center gap-2 text-rose-300 font-semibold">
               <UIcon name="i-lucide-alert-triangle" class="size-4 shrink-0" />
-              <span>Hapus permanen</span>
+              <span>Permanent deletion</span>
             </div>
             <p class="text-zinc-400 text-[11px] leading-relaxed">
               <strong class="text-white font-mono">{{ folderToDelete.path }}</strong> —
-              hapus rekursif ikut menghapus subfolder <em>dan file fisiknya di provider</em>,
-              bukan cuma catatan di index.
+              a recursive delete also removes subfolders <em>and the physical files at the
+              provider</em>, not just the index records.
             </p>
           </div>
 
@@ -1029,7 +1418,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isDeleteFolderModalOpen = false" />
           <UButton
-            label="Hapus jika kosong"
+            label="Delete if empty"
             color="neutral"
             variant="soft"
             class="rounded-xl font-semibold"
@@ -1037,7 +1426,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             @click="confirmDeleteFolder(false)"
           />
           <UButton
-            label="Hapus beserta isinya"
+            label="Delete with contents"
             color="error"
             class="rounded-xl font-bold"
             :loading="isBusy"
@@ -1168,9 +1557,9 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold flex items-center gap-2 text-rose-400">
             <UIcon name="i-lucide-trash-2" class="size-5" />
-            Hapus File
+            Delete File
           </h3>
-          <p class="text-xs text-zinc-400 mt-0.5">File dihapus dari provider, bukan hanya dari index.</p>
+          <p class="text-xs text-zinc-400 mt-0.5">The file is removed from the provider, not just the index.</p>
         </div>
       </template>
 
@@ -1179,7 +1568,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1">
             <span class="font-bold text-white block truncate">{{ fileToDelete.name }}</span>
             <span class="text-zinc-400 block">
-              Tersimpan di <strong class="text-zinc-300">{{ fileToDelete.account_label }}</strong> —
+              Stored on <strong class="text-zinc-300">{{ fileToDelete.account_label }}</strong> —
               {{ formatBytes(fileToDelete.size_bytes) }}
             </span>
           </div>
@@ -1190,7 +1579,230 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isDeleteFileModalOpen = false" />
-          <UButton label="Hapus" color="error" class="rounded-xl font-bold" :loading="isBusy" @click="confirmDeleteFile" />
+          <UButton label="Delete" color="error" class="rounded-xl font-bold" :loading="isBusy" @click="confirmDeleteFile" />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- VFS Modal 6: Move Folder ke induk lain -->
+    <UModal
+      v-model:open="isMoveFolderModalOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <UIcon name="i-lucide-folder-input" class="size-5 text-emerald-400" />
+            Move Virtual Folder
+          </h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Paths of every item inside are recalculated.</p>
+        </div>
+      </template>
+
+      <template #body>
+        <div v-if="folderToMove" class="space-y-4">
+          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs space-y-1">
+            <span class="text-zinc-400 block">Folder:</span>
+            <span class="font-bold text-white block truncate">{{ folderToMove.name }}</span>
+            <span class="text-zinc-400 block mt-1">
+              Current path: <strong class="text-emerald-400 font-mono">{{ folderToMove.path }}</strong>
+            </span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-zinc-300 mb-1.5">Select New Parent Folder</label>
+            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#121215] p-1.5">
+              <button
+                v-for="item in moveFolderOptions"
+                :key="item.path"
+                type="button"
+                class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left"
+                :class="[
+                  targetParentFolderId === item.id
+                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/25'
+                    : 'text-zinc-300 hover:bg-white/[0.05]'
+                ]"
+                :style="{ paddingLeft: `${item.depth * 14 + 12}px` }"
+                @click="targetParentFolderId = item.id"
+              >
+                <span class="flex items-center gap-2 truncate">
+                  <UIcon :name="item.id === null ? 'i-lucide-hard-drive' : 'i-lucide-folder'" class="size-3.5 text-zinc-400" />
+                  <span class="truncate">{{ item.name }}</span>
+                </span>
+                <UIcon v-if="targetParentFolderId === item.id" name="i-lucide-check" class="size-3.5 text-emerald-400 shrink-0" />
+              </button>
+            </div>
+            <p v-if="moveFolderOptions.length === 0" class="text-[11px] text-zinc-500 mt-2">
+              No other folder can hold this one.
+            </p>
+          </div>
+
+          <p v-if="actionError" class="text-[11px] text-red-400 leading-snug">{{ actionError }}</p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isMoveFolderModalOpen = false" />
+          <UButton
+            label="Move Folder"
+            color="primary"
+            class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+            :loading="isBusy"
+            :disabled="moveFolderOptions.length === 0"
+            @click="confirmMoveFolder"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Aksi massal 1: pindahkan file terpilih ke satu folder virtual -->
+    <UModal
+      v-model:open="isBulkMoveOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <UIcon name="i-lucide-folder-input" class="size-5 text-emerald-400" />
+            Move {{ filesStore.selectedFileIds.length }} Files
+          </h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Database-only change; nothing moves at the provider.</p>
+        </div>
+      </template>
+
+      <template #body>
+        <div>
+          <label class="block text-xs font-bold text-zinc-300 mb-1.5">Select Destination Virtual Folder</label>
+            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#121215] p-1.5">
+              <button
+                v-for="item in filesStore.allFoldersHierarchical"
+                :key="item.path"
+                type="button"
+                class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left"
+                :class="[
+                  bulkTargetFolderId === item.id
+                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/25'
+                    : 'text-zinc-300 hover:bg-white/[0.05]'
+                ]"
+                :style="{ paddingLeft: `${item.depth * 14 + 12}px` }"
+                @click="bulkTargetFolderId = item.id"
+              >
+                <span class="flex items-center gap-2 truncate">
+                  <UIcon :name="item.id === null ? 'i-lucide-hard-drive' : 'i-lucide-folder'" class="size-3.5 text-zinc-400" />
+                  <span class="truncate">{{ item.name }}</span>
+                </span>
+                <UIcon v-if="bulkTargetFolderId === item.id" name="i-lucide-check" class="size-3.5 text-emerald-400 shrink-0" />
+              </button>
+            </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isBulkMoveOpen = false" />
+          <UButton label="Move Files" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmBulkMove" />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Aksi massal 2: migrasikan file terpilih ke akun lain -->
+    <UModal
+      v-model:open="isBulkMigrateOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <UIcon name="i-lucide-arrow-right-left" class="size-5 text-emerald-400" />
+            Migrate {{ filesStore.selectedFileIds.length }} Files
+          </h3>
+          <p class="text-xs text-zinc-400 mt-0.5">
+            Real transfer of {{ formatBytes(filesStore.selectedBytes) }}, one file at a time.
+          </p>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-3">
+          <label class="block text-xs font-bold text-zinc-300">Select Destination Cloud Provider</label>
+          <USelect
+            v-model="bulkTargetAccountId"
+            :items="bulkMigrateOptions"
+            class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
+            icon="i-lucide-cloud-upload"
+            size="md"
+          />
+          <p class="text-[11px] text-zinc-500 leading-relaxed">
+            Files already on the destination account are migrated too; the router does not skip them.
+          </p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isBulkMigrateOpen = false" />
+          <UButton
+            label="Migrate Now"
+            color="primary"
+            class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+            :loading="isBusy"
+            :disabled="!bulkTargetAccountId"
+            @click="confirmBulkMigrate"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Aksi massal 3: hapus file terpilih (objek di provider ikut terhapus) -->
+    <UModal
+      v-model:open="isBulkDeleteOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold flex items-center gap-2 text-rose-400">
+            <UIcon name="i-lucide-trash-2" class="size-5" />
+            Delete {{ filesStore.selectedFileIds.length }} Files
+          </h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Files are removed from the providers, not just the index.</p>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1.5">
+          <div class="flex items-center gap-2 text-rose-300 font-semibold">
+            <UIcon name="i-lucide-alert-triangle" class="size-4 shrink-0" />
+            <span>Permanent deletion</span>
+          </div>
+          <p class="text-zinc-400 text-[11px] leading-relaxed">
+            {{ filesStore.selectedFileIds.length }} files totalling
+            <strong class="text-white">{{ formatBytes(filesStore.selectedBytes) }}</strong>
+            will be deleted at their providers. This cannot be undone.
+          </p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isBulkDeleteOpen = false" />
+          <UButton label="Delete Files" color="error" class="rounded-xl font-bold" :loading="isBusy" @click="confirmBulkDelete" />
         </div>
       </template>
     </UModal>

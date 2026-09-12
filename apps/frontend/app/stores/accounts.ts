@@ -138,7 +138,7 @@ export const useAccountsStore = defineStore('accounts', () => {
   async function reconnectAccount(id: string) {
     const account = getAccount(id)
     if (!account) {
-      throw new ApiError('NOT_FOUND', 'Akun tidak ditemukan', 404)
+      throw new ApiError('NOT_FOUND', 'Account not found', 404)
     }
     return startOAuthConnect(account.provider, account.label)
   }
