@@ -107,7 +107,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
           </span>
           <UBadge
             :label="`${accountsStore.activeAccounts.length} Connected`"
-            color="emerald"
+            color="primary"
             variant="subtle"
             size="xs"
             class="text-[9px] px-1.5 py-0.5 font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -130,7 +130,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
             icon="i-lucide-upload-cloud"
             label="Upload File"
             block
-            color="emerald"
+            color="primary"
             variant="solid"
             class="rounded-xl font-bold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer"
             @click="filesStore.isUploadModalOpen = true"
@@ -150,7 +150,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
             <span class="text-[11px] font-bold text-emerald-400">{{ accountsStore.usagePercent }}%</span>
           </div>
 
-          <UProgress :model-value="accountsStore.usagePercent" color="emerald" size="sm" />
+          <UProgress :model-value="accountsStore.usagePercent" color="primary" size="sm" />
 
           <div class="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
             <span>{{ formatBytes(accountsStore.usedStorage) }} used</span>

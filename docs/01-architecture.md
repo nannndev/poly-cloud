@@ -39,7 +39,7 @@ graph TB
         fe[Frontend<br/>Nuxt 4 SPA]
         be[Backend API<br/>Go]
         db[(Postgres<br/>Supabase)]
-        engine[rclone Engine<br/>CLI/lib subprocess]
+        engine[rclone Engine<br/>rcd daemon, RC API]
     end
     providers[(Cloud Providers<br/>GDrive/Dropbox/OneDrive/S3/B2)]
 
@@ -104,6 +104,6 @@ Upgrade file A→B = baca utuh → pecah → sebar → tulis N `file_blocks` →
 - **Reliability:** operasi idempotent; retry backoff pada error transient; incremental sync.
 
 ## 9. Batasan & Asumsi
-- rclone tersedia di runtime (bundled di image Docker backend).
+- rclone berjalan sebagai daemon RC terpisah di jaringan privat, hanya dijangkau backend (ADR-011).
 - Provider yang dipakai mendukung `about` (quota) — jika tidak, kapasitas ditandai unknown.
 - v1: operasi manajemen (bukan sync-daemon dua arah realtime).

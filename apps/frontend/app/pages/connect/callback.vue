@@ -1,83 +1,114 @@
 <script setup lang="ts">
-import type { StorageProvider } from '~/types'
-
 const route = useRoute()
 const router = useRouter()
 const accountsStore = useAccountsStore()
 
-const currentStep = ref<1 | 2 | 3 | 4>(1)
-const provider = computed(() => (route.query.provider as StorageProvider) || 'gdrive')
-const label = computed(() => (route.query.label as string) || 'Google Drive Primary')
-const email = computed(() => (route.query.email as string) || 'ekaprasetya2244@gmail.com')
-const capacityGb = computed(() => Number(route.query.capacity) || 15)
+type Phase = 'exchanging' | 'syncing' | 'done' | 'failed'
+
+const phase = ref<Phase>('exchanging')
+const errorMessage = ref('')
+const accountLabel = ref('')
+
+// Provider mengirim balik ?code&state; error consent datang sebagai ?error.
+const code = computed(() => (route.query.code as string) || '')
+const state = computed(() => (route.query.state as string) || '')
+const providerError = computed(() => (route.query.error_description || route.query.error) as string | undefined)
 
 const steps = [
-  { id: 1, title: 'Validating OAuth State & Exchanging Code', desc: 'Communicating with provider OAuth token endpoint' },
-  { id: 2, title: 'Encrypting Token Credentials (AES-256-GCM)', desc: 'Securing access and refresh tokens in PostgreSQL' },
-  { id: 3, title: 'Provisioning rclone Daemon Remote', desc: 'Calling rclone rcd config/create with acc_<uuid> identity' },
-  { id: 4, title: 'Initial Metadata Synchronization Complete', desc: 'Populating files_index and starting smart routing' }
+  { id: 1, title: 'Menukar authorization code', desc: 'Backend menghubungi token endpoint provider' },
+  { id: 2, title: 'Menyimpan token terenkripsi', desc: 'AES-256-GCM di tabel account_tokens' },
+  { id: 3, title: 'Provisioning remote rclone', desc: 'config/create dengan identitas acc_<uuid>' },
+  { id: 4, title: 'Sinkronisasi index awal', desc: 'Membaca isi akun ke files_index' }
 ]
 
+// Backend menyelesaikan langkah 1-3 dalam satu panggilan callback, lalu
+// menjalankan sync di latar belakang. Stepper mencerminkan itu.
+const currentStep = computed(() => {
+  if (phase.value === 'exchanging') return 1
+  if (phase.value === 'syncing') return 4
+  return 4
+})
+
+const progressPercent = computed(() => {
+  if (phase.value === 'exchanging') return 35
+  if (phase.value === 'syncing') return 80
+  return 100
+})
+
 onMounted(async () => {
-  // Step 1: Exchange code
-  await new Promise(resolve => setTimeout(resolve, 700))
-  currentStep.value = 2
+  if (providerError.value) {
+    phase.value = 'failed'
+    errorMessage.value = `Provider menolak otorisasi: ${providerError.value}`
+    return
+  }
+  if (!code.value || !state.value) {
+    phase.value = 'failed'
+    errorMessage.value = 'Parameter code atau state tidak ada di URL callback.'
+    return
+  }
 
-  // Step 2: Encrypt token
-  await new Promise(resolve => setTimeout(resolve, 600))
-  currentStep.value = 3
+  try {
+    const account = await accountsStore.completeOAuthConnect(code.value, state.value)
+    accountLabel.value = account.label
+    phase.value = 'syncing'
 
-  // Step 3: Provision rclone daemon
-  await new Promise(resolve => setTimeout(resolve, 800))
-  currentStep.value = 4
+    // Backend memulai initial sync sendiri; muat ulang agar kuota & jumlah file
+    // yang sudah terindeks muncul.
+    await new Promise(resolve => setTimeout(resolve, 1200))
+    await accountsStore.loadAll().catch(() => null)
+    phase.value = 'done'
 
-  // Add the newly provisioned account into the Pinia store
-  accountsStore.addAccount({
-    provider: provider.value,
-    label: label.value,
-    email: email.value,
-    total_bytes: capacityGb.value * 1024 * 1024 * 1024,
-    provisioning_type: 'oauth'
-  })
-
-  // Step 4: Redirect to accounts page
-  setTimeout(() => {
-    router.push('/accounts')
-  }, 1000)
+    setTimeout(() => router.push('/accounts'), 900)
+  } catch (err) {
+    phase.value = 'failed'
+    errorMessage.value = friendlyMessage(err)
+  }
 })
 </script>
 
 <template>
   <div class="min-h-screen flex items-center justify-center p-4 bg-[#09090b] text-zinc-200">
     <div class="max-w-lg w-full p-8 rounded-3xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl space-y-6">
-      <!-- Top Status Icon -->
+      <!-- Status utama -->
       <div class="flex flex-col items-center text-center space-y-3">
-        <div class="flex size-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+        <div
+          class="flex size-14 items-center justify-center rounded-2xl border"
+          :class="phase === 'failed'
+            ? 'bg-red-500/15 text-red-400 border-red-500/25'
+            : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'"
+        >
           <UIcon
-            :name="currentStep === 4 ? 'i-lucide-check' : 'i-lucide-loader-2'"
+            :name="phase === 'failed' ? 'i-lucide-x' : phase === 'done' ? 'i-lucide-check' : 'i-lucide-loader-2'"
             class="size-7"
-            :class="[currentStep !== 4 ? 'animate-spin' : 'stroke-[2.5]']"
+            :class="[phase === 'done' || phase === 'failed' ? 'stroke-[2.5]' : 'animate-spin']"
           />
         </div>
 
         <div>
           <h2 class="text-base font-bold text-white">
-            {{ currentStep === 4 ? 'Account Provisioned Successfully!' : 'Provisioning Cloud Account...' }}
+            {{ phase === 'failed'
+              ? 'Gagal menghubungkan akun'
+              : phase === 'done'
+              ? 'Akun berhasil terhubung'
+              : 'Menghubungkan akun...' }}
           </h2>
-          <p class="text-xs text-zinc-400 mt-1 max-w-sm">
-            Backend-managed OAuth is registering <strong class="text-emerald-400">{{ label }}</strong> into the Poly Cloud platform and configuring the rclone daemon.
+          <p v-if="phase !== 'failed'" class="text-xs text-zinc-400 mt-1 max-w-sm">
+            Backend menukar authorization code, menyimpan token terenkripsi, lalu
+            mendaftarkan <strong class="text-emerald-400">{{ accountLabel || 'akun ini' }}</strong>
+            sebagai remote di rclone daemon.
           </p>
+          <p v-else class="text-xs text-zinc-400 mt-1 max-w-sm">{{ errorMessage }}</p>
         </div>
       </div>
 
-      <!-- Provisioning Stepper Tracker -->
-      <div class="space-y-2.5 p-4 rounded-2xl bg-[#121215] border border-white/[0.07]">
+      <!-- Stepper -->
+      <div v-if="phase !== 'failed'" class="space-y-2.5 p-4 rounded-2xl bg-[#121215] border border-white/[0.07]">
         <div
           v-for="step in steps"
           :key="step.id"
           class="flex items-start gap-3 text-xs transition-opacity duration-200"
           :class="[
-            step.id < currentStep
+            phase === 'done' || step.id < currentStep
               ? 'opacity-60 text-zinc-400'
               : step.id === currentStep
               ? 'opacity-100 text-white'
@@ -86,7 +117,7 @@ onMounted(async () => {
         >
           <div class="mt-0.5 shrink-0">
             <UIcon
-              v-if="step.id < currentStep"
+              v-if="phase === 'done' || step.id < currentStep"
               name="i-lucide-check-circle-2"
               class="size-4 text-emerald-400"
             />
@@ -104,7 +135,7 @@ onMounted(async () => {
           </div>
 
           <div class="min-w-0">
-            <p class="font-medium text-[11px]" :class="step.id === currentStep ? 'text-emerald-300 font-semibold' : ''">
+            <p class="font-medium text-[11px]" :class="step.id === currentStep && phase !== 'done' ? 'text-emerald-300 font-semibold' : ''">
               {{ step.title }}
             </p>
             <p class="text-[10px] text-zinc-500 truncate mt-0.5">{{ step.desc }}</p>
@@ -112,18 +143,35 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Progress Bar -->
-      <div class="space-y-2">
+      <!-- Progress -->
+      <div v-if="phase !== 'failed'" class="space-y-2">
         <div class="h-1.5 w-full bg-zinc-900 border border-white/[0.06] rounded-full overflow-hidden">
           <div
             class="h-full bg-emerald-500 rounded-full transition-all duration-500"
-            :style="{ width: `${(currentStep / 4) * 100}%` }"
+            :style="{ width: `${progressPercent}%` }"
           />
         </div>
         <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
-          <span>Provisioning Step {{ currentStep }} of 4</span>
-          <span class="text-emerald-400">{{ (currentStep / 4) * 100 }}%</span>
+          <span>{{ phase === 'done' ? 'Selesai' : 'Sedang berjalan' }}</span>
+          <span class="text-emerald-400">{{ progressPercent }}%</span>
         </div>
+      </div>
+
+      <!-- Aksi saat gagal -->
+      <div v-else class="flex items-center justify-center gap-2.5">
+        <UButton
+          label="Kembali ke Accounts"
+          color="neutral"
+          variant="ghost"
+          class="rounded-xl font-medium"
+          @click="router.push('/accounts')"
+        />
+        <UButton
+          label="Coba lagi"
+          color="primary"
+          class="rounded-xl font-bold"
+          @click="router.push('/accounts?connect=1')"
+        />
       </div>
     </div>
   </div>

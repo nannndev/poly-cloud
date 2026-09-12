@@ -16,22 +16,55 @@ services:
       timeout: 5s
       retries: 10
 
+  # rclone RC daemon — komponen berhak-tinggi (ADR-011): tak pernah publish port
+  # ke host, hanya backend di jaringan compose yang boleh menjangkaunya.
+  rclone:
+    image: rclone/rclone:latest
+    command:
+      - rcd
+      - --rc-addr=:5572
+      - --rc-user=${RCLONE_RC_USER:-polycloud}
+      - --rc-pass=${RCLONE_RC_PASS:-polycloud-rc-secret}
+      - --rc-serve
+      - --config=/config/rclone/rclone.conf
+      - --log-level=INFO
+    volumes:
+      - rclone_config:/config/rclone
+    expose:
+      - "5572"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -q -O- --post-data='{}' --header='Content-Type: application/json' --http-user=${RCLONE_RC_USER:-polycloud} --http-password=${RCLONE_RC_PASS:-polycloud-rc-secret} http://localhost:5572/rc/noop || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./apps/backend
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://polycloud:polycloud@postgres:5432/polycloud?sslmode=disable}
       PORT: ${PORT:-8080}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      RCLONE_CONFIG_PATH: ${RCLONE_CONFIG_PATH:-/config/rclone/rclone.conf}
       TOKEN_ENC_KEY: ${TOKEN_ENC_KEY}
       OAUTH_REDIRECT_URL: ${OAUTH_REDIRECT_URL:-http://localhost:3000/connect/callback}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      RCLONE_RC_URL: ${RCLONE_RC_URL:-http://rclone:5572}
+      RCLONE_RC_USER: ${RCLONE_RC_USER:-polycloud}
+      RCLONE_RC_PASS: ${RCLONE_RC_PASS:-polycloud-rc-secret}
+      RCLONE_BASE_DIR: ${RCLONE_BASE_DIR:-PolyCloud}
+      ROUTING_STRATEGY: ${ROUTING_STRATEGY:-most-free}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DROPBOX_CLIENT_ID: ${DROPBOX_CLIENT_ID:-}
+      DROPBOX_CLIENT_SECRET: ${DROPBOX_CLIENT_SECRET:-}
+      ONEDRIVE_CLIENT_ID: ${ONEDRIVE_CLIENT_ID:-}
+      ONEDRIVE_CLIENT_SECRET: ${ONEDRIVE_CLIENT_SECRET:-}
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - rclone_config:/config/rclone
+      rclone:
+        condition: service_started
 
   frontend:
     build: ./apps/frontend

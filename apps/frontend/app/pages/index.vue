@@ -2,6 +2,16 @@
 const accountsStore = useAccountsStore()
 const filesStore = useFilesStore()
 const { formatBytes } = useFormatters()
+
+// Explorer butuh keduanya: daftar akun untuk badge & filter, folder + file
+// untuk isinya. Dimuat di klien karena backend hanya dijangkau dari browser.
+await useAsyncData('explorer-page', async () => {
+  await Promise.all([
+    accountsStore.loadAll().catch(() => null),
+    filesStore.loadAll().catch(() => null)
+  ])
+  return true
+}, { server: false, default: () => false })
 </script>
 
 <template>
@@ -18,7 +28,7 @@ const { formatBytes } = useFormatters()
               <h1 class="font-bold text-base text-highlighted">Unified File Explorer</h1>
               <UBadge
                 label="Virtual Aggregator"
-                color="emerald"
+                color="primary"
                 variant="subtle"
                 size="xs"
                 class="hidden sm:inline-flex rounded-lg font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -39,7 +49,7 @@ const { formatBytes } = useFormatters()
               <UButton
                 label="Upload File"
                 icon="i-lucide-upload-cloud"
-                color="emerald"
+                color="primary"
                 variant="solid"
                 class="rounded-xl font-bold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 transition-all cursor-pointer"
                 @click="filesStore.isUploadModalOpen = true"

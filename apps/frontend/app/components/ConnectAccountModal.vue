@@ -9,8 +9,8 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const router = useRouter()
 const accountsStore = useAccountsStore()
+const toast = useToast()
 
 const isOpen = computed({
   get: () => props.open,
@@ -18,12 +18,11 @@ const isOpen = computed({
 })
 
 const selectedProvider = ref<StorageProvider>('gdrive')
-const label = ref('Google Drive Primary')
-const email = ref('ekaprasetya2244@gmail.com')
-const capacityGb = ref(15)
+const label = ref('')
 const isSubmitting = ref(false)
+const submitError = ref('')
 
-// Non-OAuth Credential Fields (S3, R2, B2)
+// Kredensial provider berbasis key (S3 / R2 / B2).
 const accessKeyId = ref('')
 const secretAccessKey = ref('')
 const bucketName = ref('')
@@ -37,7 +36,6 @@ interface ProviderDefinition {
   icon: string
   tag: string
   isOAuth: boolean
-  defaultCapacity: number
   defaultLabel: string
 }
 
@@ -49,8 +47,7 @@ const providers: ProviderDefinition[] = [
     icon: 'i-simple-icons-googledrive',
     tag: 'OAuth 2.0',
     isOAuth: true,
-    defaultCapacity: 15,
-    defaultLabel: 'Google Drive Primary'
+    defaultLabel: 'Google Drive'
   },
   {
     id: 'onedrive',
@@ -59,118 +56,142 @@ const providers: ProviderDefinition[] = [
     icon: 'i-simple-icons-microsoftonedrive',
     tag: 'OAuth 2.0',
     isOAuth: true,
-    defaultCapacity: 100,
-    defaultLabel: 'OneDrive Business'
+    defaultLabel: 'OneDrive'
   },
   {
     id: 'dropbox',
     name: 'Dropbox',
-    desc: 'Personal & Team Share',
+    desc: 'Personal & Business',
     icon: 'i-simple-icons-dropbox',
     tag: 'OAuth 2.0',
     isOAuth: true,
-    defaultCapacity: 20,
-    defaultLabel: 'Dropbox Team Share'
+    defaultLabel: 'Dropbox'
   },
   {
     id: 's3',
-    name: 'Amazon S3',
-    desc: 'Standard & Glacier Vault',
-    icon: 'i-simple-icons-amazons3',
-    tag: 'IAM Keys',
+    name: 'AWS S3',
+    desc: 'S3 & kompatibel',
+    icon: 'i-simple-icons-amazonwebservices',
+    tag: 'Access Key',
     isOAuth: false,
-    defaultCapacity: 250,
-    defaultLabel: 'AWS S3 Cold Bucket'
+    defaultLabel: 'S3 Bucket'
   },
   {
     id: 'r2',
     name: 'Cloudflare R2',
-    desc: 'Zero-Egress Object Store',
+    desc: 'Zero egress',
     icon: 'i-simple-icons-cloudflare',
-    tag: 'S3-Compatible',
+    tag: 'Access Key',
     isOAuth: false,
-    defaultCapacity: 50,
-    defaultLabel: 'Cloudflare R2 Media Hot'
+    defaultLabel: 'Cloudflare R2'
   },
   {
     id: 'b2',
     name: 'Backblaze B2',
-    desc: 'High-Durability Cold Store',
-    icon: 'i-lucide-hard-drive',
-    tag: 'App Key ID',
+    desc: 'Arsip murah',
+    icon: 'i-simple-icons-backblaze',
+    tag: 'App Key',
     isOAuth: false,
-    defaultCapacity: 100,
-    defaultLabel: 'Backblaze B2 Archive'
+    defaultLabel: 'Backblaze B2'
   }
 ]
 
-const currentProviderMeta = computed(() => {
-  return providers.find(p => p.id === selectedProvider.value) || providers[0]
+const currentProviderMeta = computed(() =>
+  providers.find(p => p.id === selectedProvider.value) || providers[0]!)
+
+// Backend melaporkan provider OAuth mana yang kredensial platformnya sudah diisi
+// di env; tanpa itu, tombol authorize pasti gagal (docs/10 §1).
+const isProviderReady = computed(() => {
+  const info = accountsStore.providerInfo(selectedProvider.value)
+  return info ? info.configured : true
 })
 
-const presetCapacities = [
-  { label: '15 GB', value: 15, tag: 'Free Tier' },
-  { label: '50 GB', value: 50 },
-  { label: '100 GB', value: 100, tag: 'Standard' },
-  { label: '500 GB', value: 500 },
-  { label: '1 TB', value: 1024 },
-  { label: '5 TB', value: 5120 }
-]
+onMounted(() => {
+  if (accountsStore.providers.length === 0) {
+    accountsStore.fetchProviders().catch(() => null)
+  }
+})
+
+watch(isOpen, (open) => {
+  if (open) {
+    submitError.value = ''
+    if (!label.value) label.value = currentProviderMeta.value.defaultLabel
+  }
+})
 
 function selectProvider(p: StorageProvider) {
   selectedProvider.value = p
+  submitError.value = ''
   const found = providers.find(item => item.id === p)
   if (found) {
-    capacityGb.value = found.defaultCapacity
     label.value = found.defaultLabel
     if (p === 's3') {
       endpointOrRegion.value = 'us-east-1'
     } else if (p === 'r2') {
       endpointOrRegion.value = 'https://<account_id>.r2.cloudflarestorage.com'
+    } else if (p === 'b2') {
+      endpointOrRegion.value = ''
     }
   }
 }
 
 async function handleConnect() {
-  if (!label.value.trim()) {
-    label.value = currentProviderMeta.value.defaultLabel
-  }
-
+  submitError.value = ''
+  const finalLabel = label.value.trim() || currentProviderMeta.value.defaultLabel
   isSubmitting.value = true
 
-  // Flow per doc 10 (Account Provisioning):
-  if (currentProviderMeta.value.isOAuth) {
-    // OAuth flow: Redirect to callback simulating backend-managed OAuth exchange
-    await new Promise(resolve => setTimeout(resolve, 400))
-    isSubmitting.value = false
-    isOpen.value = false
+  try {
+    if (currentProviderMeta.value.isOAuth) {
+      // Backend membangun consent URL memakai OAuth app platform, lalu browser
+      // diarahkan ke provider. Sisanya diselesaikan halaman callback.
+      const authUrl = await accountsStore.startOAuthConnect(selectedProvider.value, finalLabel)
+      window.location.href = authUrl
+      return
+    }
 
-    // Route to OAuth callback page with parameters
-    router.push({
-      path: '/connect/callback',
-      query: {
-        provider: selectedProvider.value,
-        label: label.value,
-        email: email.value || 'ekaprasetya2244@gmail.com',
-        capacity: capacityGb.value.toString()
+    // Provider berbasis key: akun langsung jadi tanpa redirect.
+    const fields: Record<string, string> = { bucket: bucketName.value.trim() }
+    if (selectedProvider.value === 'b2') {
+      fields.account = accessKeyId.value.trim()
+      fields.key = secretAccessKey.value.trim()
+    } else {
+      fields.access_key_id = accessKeyId.value.trim()
+      fields.secret_access_key = secretAccessKey.value.trim()
+      if (selectedProvider.value === 'r2') {
+        fields.endpoint = endpointOrRegion.value.trim()
+      } else if (endpointOrRegion.value.trim()) {
+        // Nilai berupa URL diperlakukan sebagai endpoint kustom (MinIO dsb.),
+        // selain itu sebagai region AWS.
+        const value = endpointOrRegion.value.trim()
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          fields.endpoint = value
+        } else {
+          fields.region = value
+        }
       }
-    })
-  } else {
-    // Non-OAuth direct key provisioning:
-    await new Promise(resolve => setTimeout(resolve, 800))
+    }
 
-    const bucketIdentifier = bucketName.value.trim() || `${selectedProvider.value}-vault`
-    accountsStore.addAccount({
-      provider: selectedProvider.value,
-      label: label.value,
-      email: bucketIdentifier,
-      total_bytes: capacityGb.value * 1024 * 1024 * 1024,
-      provisioning_type: 'credentials'
+    const account = await accountsStore.connectWithKeys(selectedProvider.value, finalLabel, fields)
+    toast.add({
+      title: 'Akun terhubung',
+      description: `${account.label} siap dipakai. Jalankan sync untuk mengindeks isinya.`,
+      color: 'success'
     })
-
-    isSubmitting.value = false
+    resetForm()
     isOpen.value = false
+    await accountsStore.fetchQuota().catch(() => null)
+  } catch (err) {
+    submitError.value = friendlyMessage(err)
+  } finally {
+    isSubmitting.value = false
   }
+}
+
+function resetForm() {
+  accessKeyId.value = ''
+  secretAccessKey.value = ''
+  bucketName.value = ''
+  label.value = ''
 }
 </script>
 
@@ -195,7 +216,7 @@ async function handleConnect() {
               Connect Cloud Storage Account
               <UBadge
                 :label="currentProviderMeta.isOAuth ? 'Backend OAuth' : 'Direct Key Provisioning'"
-                color="emerald"
+                color="primary"
                 variant="subtle"
                 size="xs"
                 class="rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-medium"
@@ -224,7 +245,7 @@ async function handleConnect() {
           <div class="flex items-center justify-between mb-2.5">
             <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <span>1. Select Storage Provider</span>
-              <span class="text-emerald-400 font-normal">({{ providers.length }} supported)</span>
+              <span class="text-emerald-400 font-normal">({{ providers.length }} didukung)</span>
             </label>
             <span class="text-[11px] text-zinc-500 font-medium">Selected: <strong class="text-zinc-200">{{ currentProviderMeta.name }}</strong></span>
           </div>
@@ -299,46 +320,32 @@ async function handleConnect() {
               </label>
               <UInput
                 v-model="label"
-                placeholder="e.g., GDrive Primary Work"
+                placeholder="mis. GDrive Kerjaan"
                 icon="i-lucide-tag"
                 size="md"
                 class="w-full rounded-xl"
               />
-              <span class="text-[10px] text-zinc-500 block">Display identifier shown in explorer and smart routing.</span>
+              <span class="text-[10px] text-zinc-500 block">Nama yang tampil di explorer dan badge file.</span>
             </div>
 
-            <!-- If OAuth: Email field -->
-            <div v-if="currentProviderMeta.isOAuth" class="space-y-1.5">
+            <!-- Provider berbasis key: bucket wajib, karena akar remote
+                 penyimpanan objek adalah daftar bucket, bukan tempat menaruh file. -->
+            <div v-if="!currentProviderMeta.isOAuth" class="space-y-1.5">
               <label class="block text-xs font-semibold text-zinc-300">
-                Connected Account Email
-              </label>
-              <UInput
-                v-model="email"
-                placeholder="ekaprasetya2244@gmail.com"
-                icon="i-lucide-mail"
-                size="md"
-                class="w-full rounded-xl"
-              />
-              <span class="text-[10px] text-zinc-500 block">Account owner address for identity tracking.</span>
-            </div>
-
-            <!-- If Non-OAuth S3/R2/B2: Bucket Name -->
-            <div v-else class="space-y-1.5">
-              <label class="block text-xs font-semibold text-zinc-300">
-                Target Bucket Name
+                Nama Bucket
               </label>
               <UInput
                 v-model="bucketName"
-                placeholder="e.g., polycloud-vault-2026"
+                placeholder="mis. polycloud-vault"
                 icon="i-lucide-folder-archive"
                 size="md"
                 class="w-full rounded-xl"
               />
-              <span class="text-[10px] text-zinc-500 block">Bucket or container name in cloud provider.</span>
+              <span class="text-[10px] text-zinc-500 block">Bucket tujuan; semua objek ditaruh di dalamnya.</span>
             </div>
           </div>
 
-          <!-- Non-OAuth Specific Fields (S3, R2, B2) -->
+          <!-- Kredensial provider berbasis key (S3, R2, B2) -->
           <div v-if="!currentProviderMeta.isOAuth" class="p-4 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-3.5">
             <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
               <span class="flex items-center gap-1.5">
@@ -403,35 +410,27 @@ async function handleConnect() {
             </div>
           </div>
 
-          <!-- 4. Storage Quota Allocation Slider & Presets -->
-          <div class="space-y-2.5">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                <span>Storage Quota Allocation</span>
-              </label>
-              <span class="font-mono text-xs font-bold text-emerald-400">
-                {{ capacityGb >= 1024 ? `${(capacityGb / 1024).toFixed(1)} TB` : `${capacityGb} GB` }}
-              </span>
+          <!-- Peringatan: provider OAuth yang kredensial platformnya belum diisi -->
+          <div
+            v-if="currentProviderMeta.isOAuth && !isProviderReady"
+            class="flex items-start gap-3 p-3.5 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] text-xs"
+          >
+            <UIcon name="i-lucide-triangle-alert" class="size-4 text-amber-400 shrink-0 mt-0.5" />
+            <div class="leading-relaxed text-zinc-300">
+              <span class="font-bold text-amber-300">Provider belum dikonfigurasi.</span>
+              Kredensial OAuth {{ currentProviderMeta.name }} belum diisi di environment backend,
+              jadi proses otorisasi akan ditolak. Daftarkan aplikasi OAuth di provider,
+              lalu isi client id &amp; secret-nya di <code class="font-mono text-zinc-400">.env</code>.
             </div>
+          </div>
 
-            <!-- Quick Preset Chips -->
-            <div class="flex flex-wrap items-center gap-1.5">
-              <button
-                v-for="preset in presetCapacities"
-                :key="preset.value"
-                type="button"
-                class="px-2.5 py-1 rounded-xl text-xs font-medium border transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-xs"
-                :class="[
-                  capacityGb === preset.value
-                    ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300 font-bold'
-                    : 'border-white/[0.08] bg-[#121215] text-zinc-400 hover:text-white hover:bg-[#16161b]'
-                ]"
-                @click="capacityGb = preset.value"
-              >
-                <span>{{ preset.label }}</span>
-                <span v-if="preset.tag" class="text-[9px] opacity-75 uppercase">({{ preset.tag }})</span>
-              </button>
-            </div>
+          <!-- Error dari backend -->
+          <div
+            v-if="submitError"
+            class="flex items-start gap-3 p-3.5 rounded-2xl border border-red-500/25 bg-red-500/[0.06] text-xs"
+          >
+            <UIcon name="i-lucide-circle-alert" class="size-4 text-red-400 shrink-0 mt-0.5" />
+            <span class="leading-relaxed text-zinc-300">{{ submitError }}</span>
           </div>
         </div>
       </div>
@@ -456,7 +455,7 @@ async function handleConnect() {
           <button
             type="button"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            :disabled="isSubmitting"
+            :disabled="isSubmitting || (currentProviderMeta.isOAuth && !isProviderReady)"
             @click="handleConnect"
           >
             <UIcon
@@ -466,10 +465,10 @@ async function handleConnect() {
             />
             <span>
               {{ isSubmitting
-                ? 'Provisioning...'
+                ? 'Menghubungkan...'
                 : currentProviderMeta.isOAuth
                 ? `Authorize with ${currentProviderMeta.name}`
-                : 'Validate & Provision Remote' }}
+                : 'Provision Remote' }}
             </span>
           </button>
         </div>

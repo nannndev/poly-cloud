@@ -5,6 +5,7 @@ import type { FileEntry, FolderEntry } from '~/types'
 const filesStore = useFilesStore()
 const accountsStore = useAccountsStore()
 const { formatBytes, formatDate, getProviderMeta, getFileIcon } = useFormatters()
+const toast = useToast()
 
 // Modal & Selection States
 const selectedFile = ref<FileEntry | null>(null)
@@ -16,9 +17,14 @@ const isMoveModalOpen = ref(false)
 const targetMoveAccount = ref<string>('')
 
 // VFS Virtual Organization Modals
-const isNewFolderModalOpen = ref(false)
 const newFolderName = ref('')
 const newFolderError = ref('')
+
+// Dibagi lewat store: navbar halaman punya tombolnya sendiri.
+const isNewFolderModalOpen = computed({
+  get: () => filesStore.isNewFolderModalOpen,
+  set: (v: boolean) => { filesStore.isNewFolderModalOpen = v }
+})
 
 const isRenameFolderModalOpen = ref(false)
 const folderToRename = ref<FolderEntry | null>(null)
@@ -34,6 +40,13 @@ const selectedTargetVfsFolderId = ref<string | null>(null)
 const isRenameFileModalOpen = ref(false)
 const fileToRename = ref<FileEntry | null>(null)
 const renamedFileName = ref('')
+
+const isDeleteFileModalOpen = ref(false)
+const fileToDelete = ref<FileEntry | null>(null)
+
+// Status bersama untuk operasi yang menunggu backend.
+const isBusy = ref(false)
+const actionError = ref('')
 
 const categories = [
   { id: 'all', label: 'All Items', icon: 'i-lucide-layers' },
@@ -76,7 +89,7 @@ function getFileMenuItems(file: FileEntry): DropdownMenuItem[][] {
       {
         label: 'Copy Virtual Path',
         icon: 'i-lucide-copy',
-        onSelect: () => navigator.clipboard?.writeText(file.virtual_path || (file.path + '/' + file.name))
+        onSelect: () => navigator.clipboard?.writeText(file.virtual_path)
       }
     ],
     [
@@ -84,7 +97,7 @@ function getFileMenuItems(file: FileEntry): DropdownMenuItem[][] {
         label: 'Delete from Cloud',
         icon: 'i-lucide-trash-2',
         color: 'error',
-        onSelect: () => filesStore.deleteFile(file.id)
+        onSelect: () => openDeleteFile(file)
       }
     ]
   ]
@@ -96,7 +109,7 @@ function getFolderMenuItems(folder: FolderEntry): DropdownMenuItem[][] {
       {
         label: 'Open Folder',
         icon: 'i-lucide-folder-open',
-        onSelect: () => filesStore.navigateToFolder(folder.id)
+        onSelect: () => { void filesStore.navigateToFolder(folder.id) }
       },
       {
         label: 'Rename Folder',
@@ -120,16 +133,15 @@ function getFolderMenuItems(folder: FolderEntry): DropdownMenuItem[][] {
   ]
 }
 
+// Unduhan diserahkan ke browser: backend menstream langsung dari provider
+// (stream-through), jadi file besar tak perlu lewat memori JS.
 function handleDownload(file: FileEntry) {
-  const blob = new Blob([`Poly Cloud Stream-through payload for ${file.name}`], { type: file.mime || 'application/octet-stream' })
-  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url
+  a.href = filesStore.downloadUrl(file.id)
   a.download = file.name
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }
 
 function openPreview(file: FileEntry) {
@@ -145,22 +157,25 @@ function openMoveModal(file: FileEntry) {
   isMoveModalOpen.value = true
 }
 
-function confirmMove() {
+async function confirmMove() {
   if (!selectedFile.value || !targetMoveAccount.value) return
-  const dest = accountsStore.accounts.find(a => a.id === targetMoveAccount.value)
-  if (dest) {
-    filesStore.moveFile(selectedFile.value.id, {
-      id: dest.id,
-      label: dest.label,
-      provider: dest.provider
-    })
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    // Transfer data nyata antar provider — beda dari pindah folder virtual.
+    await filesStore.moveFile(selectedFile.value.id, targetMoveAccount.value)
+    isMoveModalOpen.value = false
+    toast.add({ title: 'File dipindah ke akun lain', color: 'success' })
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
   }
-  isMoveModalOpen.value = false
 }
 
 const moveOptions = computed(() => {
   if (!selectedFile.value) return []
-  return accountsStore.accounts
+  return accountsStore.activeAccounts
     .filter(a => a.id !== selectedFile.value?.account_id)
     .map(a => ({
       value: a.id,
@@ -168,76 +183,155 @@ const moveOptions = computed(() => {
     }))
 })
 
-// VFS: Create New Virtual Folder
+// VFS: buat folder virtual baru
 function openNewFolder() {
   newFolderName.value = ''
   newFolderError.value = ''
   isNewFolderModalOpen.value = true
 }
 
-function confirmCreateFolder() {
+async function confirmCreateFolder() {
   if (!newFolderName.value.trim()) {
-    newFolderError.value = 'Please enter a folder name.'
+    newFolderError.value = 'Masukkan nama folder.'
     return
   }
+  isBusy.value = true
+  newFolderError.value = ''
   try {
-    filesStore.createFolder(newFolderName.value)
+    await filesStore.createFolder(newFolderName.value)
     isNewFolderModalOpen.value = false
-  } catch (err: any) {
-    newFolderError.value = err.message || 'Error creating folder'
+  } catch (err) {
+    newFolderError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
   }
 }
 
-// VFS: Rename Folder
+// VFS: rename folder — path seluruh turunan ikut dihitung ulang di backend
 function openRenameFolder(folder: FolderEntry) {
   folderToRename.value = folder
   renamedFolderName.value = folder.name
+  actionError.value = ''
   isRenameFolderModalOpen.value = true
 }
 
-function confirmRenameFolder() {
+async function confirmRenameFolder() {
   if (!folderToRename.value || !renamedFolderName.value.trim()) return
-  filesStore.renameFolder(folderToRename.value.id, renamedFolderName.value)
-  isRenameFolderModalOpen.value = false
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    await filesStore.renameFolder(folderToRename.value.id, renamedFolderName.value)
+    isRenameFolderModalOpen.value = false
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
+  }
 }
 
-// VFS: Delete Folder
+// VFS: hapus folder
 function openDeleteFolder(folder: FolderEntry) {
   folderToDelete.value = folder
+  actionError.value = ''
   isDeleteFolderModalOpen.value = true
 }
 
-function confirmDeleteFolder() {
+async function confirmDeleteFolder(recursive: boolean) {
   if (!folderToDelete.value) return
-  filesStore.deleteFolder(folderToDelete.value.id, true)
-  isDeleteFolderModalOpen.value = false
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    await filesStore.deleteFolder(folderToDelete.value.id, recursive)
+    isDeleteFolderModalOpen.value = false
+    toast.add({ title: 'Folder dihapus', color: 'success' })
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
+  }
 }
 
-// VFS: Move File to Virtual Folder
+// VFS: pindahkan file ke folder lain (DB murni, tak menyentuh provider)
 function openMoveToFolder(file: FileEntry) {
   fileToMoveVfs.value = file
   selectedTargetVfsFolderId.value = file.folder_id || null
+  actionError.value = ''
   isMoveToFolderModalOpen.value = true
 }
 
-function confirmMoveToFolder() {
+async function confirmMoveToFolder() {
   if (!fileToMoveVfs.value) return
-  filesStore.moveFileToFolder(fileToMoveVfs.value.id, selectedTargetVfsFolderId.value)
-  isMoveToFolderModalOpen.value = false
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    await filesStore.moveFileToFolder(fileToMoveVfs.value.id, selectedTargetVfsFolderId.value)
+    isMoveToFolderModalOpen.value = false
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
+  }
 }
 
-// VFS: Rename File
+// VFS: rename file
 function openRenameFile(file: FileEntry) {
   fileToRename.value = file
   renamedFileName.value = file.name
+  actionError.value = ''
   isRenameFileModalOpen.value = true
 }
 
-function confirmRenameFile() {
+async function confirmRenameFile() {
   if (!fileToRename.value || !renamedFileName.value.trim()) return
-  filesStore.renameFile(fileToRename.value.id, renamedFileName.value)
-  isRenameFileModalOpen.value = false
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    await filesStore.renameFile(fileToRename.value.id, renamedFileName.value)
+    isRenameFileModalOpen.value = false
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
+  }
 }
+
+// Hapus file: objek fisik di provider ikut terhapus
+function openDeleteFile(file: FileEntry) {
+  fileToDelete.value = file
+  actionError.value = ''
+  isDeleteFileModalOpen.value = true
+}
+
+async function confirmDeleteFile() {
+  if (!fileToDelete.value) return
+  isBusy.value = true
+  actionError.value = ''
+  try {
+    await filesStore.deleteFile(fileToDelete.value.id)
+    isDeleteFileModalOpen.value = false
+    toast.add({ title: 'File dihapus', color: 'success' })
+  } catch (err) {
+    actionError.value = friendlyMessage(err)
+  } finally {
+    isBusy.value = false
+  }
+}
+
+// Pencarian dijalankan backend atas index DB; debounce menahan permintaan
+// sampai user berhenti mengetik.
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(() => filesStore.searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    void filesStore.runSearch()
+  }, 300)
+})
+
+watch(() => filesStore.selectedAccountId, () => {
+  if (filesStore.searchQuery.trim()) void filesStore.runSearch()
+})
+
+onBeforeUnmount(() => clearTimeout(searchTimer))
 </script>
 
 <template>
@@ -354,7 +448,7 @@ function confirmRenameFile() {
             size="xs"
             square
             class="rounded-lg"
-            :color="filesStore.viewMode === 'table' ? 'emerald' : 'neutral'"
+            :color="filesStore.viewMode === 'table' ? 'primary' : 'neutral'"
             :variant="filesStore.viewMode === 'table' ? 'solid' : 'ghost'"
             @click="filesStore.viewMode = 'table'"
           />
@@ -363,7 +457,7 @@ function confirmRenameFile() {
             size="xs"
             square
             class="rounded-lg"
-            :color="filesStore.viewMode === 'grid' ? 'emerald' : 'neutral'"
+            :color="filesStore.viewMode === 'grid' ? 'primary' : 'neutral'"
             :variant="filesStore.viewMode === 'grid' ? 'solid' : 'ghost'"
             @click="filesStore.viewMode = 'grid'"
           />
@@ -432,7 +526,7 @@ function confirmRenameFile() {
                       </span>
                       <UBadge
                         label="Virtual Folder"
-                        color="amber"
+                        color="warning"
                         variant="subtle"
                         size="xs"
                         class="text-[9px] px-1.5 py-0 rounded-md font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"
@@ -447,7 +541,7 @@ function confirmRenameFile() {
               <td class="py-3 px-4 whitespace-nowrap text-zinc-400 font-mono text-[11px]">
                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/80 border border-white/[0.06] text-zinc-300">
                   <UIcon name="i-lucide-layers" class="size-3 text-zinc-400" />
-                  {{ folder.item_count || 0 }} items
+                  {{ folder.subfolder_count }} subfolder
                 </span>
               </td>
 
@@ -515,14 +609,14 @@ function confirmRenameFile() {
                       <UBadge
                         v-if="file.is_chunked"
                         label="Chunked"
-                        color="emerald"
+                        color="primary"
                         variant="subtle"
                         size="xs"
                         class="text-[9px] px-1.5 py-0 rounded-md font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                       />
                     </div>
                     <span class="text-[11px] text-zinc-500 font-mono truncate block mt-0.5">
-                      {{ file.virtual_path || (file.path + '/' + file.name) }}
+                      {{ file.virtual_path }}
                     </span>
                   </div>
                 </div>
@@ -637,7 +731,7 @@ function confirmRenameFile() {
                   {{ folder.name }}
                 </h4>
                 <span class="text-[11px] font-mono text-zinc-500 block">
-                  {{ folder.item_count || 0 }} items
+                  {{ folder.subfolder_count }} subfolder
                 </span>
               </div>
             </div>
@@ -719,7 +813,7 @@ function confirmRenameFile() {
               <UBadge
                 v-if="file.is_chunked"
                 label="Chunked"
-                color="emerald"
+                color="primary"
                 variant="subtle"
                 size="xs"
                 class="text-[9px] px-1 py-0 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -742,110 +836,16 @@ function confirmRenameFile() {
       </div>
     </div>
 
-    <!-- Quick Preview Modal -->
-    <UModal
+    <!-- Interactive Rich File Preview Modal (Images, Videos, Audio, PDF, Code, Spreadsheets, Archives) -->
+    <FilePreviewModal
       v-model:open="isPreviewModalOpen"
-      :ui="{
-        content: 'sm:max-w-xl bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
-        body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
-      }"
-    >
-      <template #header>
-        <div v-if="previewFile" class="px-6 pt-6 pb-2 flex items-start justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="p-3 rounded-2xl bg-[#15151a] border border-white/[0.06]">
-              <UIcon
-                :name="getFileIcon(previewFile.mime, previewFile.name).icon"
-                class="size-7"
-                :class="getFileIcon(previewFile.mime, previewFile.name).color"
-              />
-            </div>
-            <div class="min-w-0">
-              <h3 class="font-bold text-sm text-white truncate">{{ previewFile.name }}</h3>
-              <p class="text-xs text-zinc-400 font-mono mt-0.5">{{ previewFile.virtual_path || previewFile.path }}</p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            class="flex size-8 items-center justify-center rounded-xl bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-colors cursor-pointer"
-            @click="isPreviewModalOpen = false"
-          >
-            <UIcon name="i-lucide-x" class="size-4" />
-          </button>
-        </div>
-      </template>
-
-      <template #body>
-        <div v-if="previewFile" class="space-y-4">
-          <!-- Metadata Key-Value List -->
-          <div class="p-4 rounded-2xl border border-white/[0.07] bg-[#121215] space-y-2.5 text-xs">
-            <div class="flex justify-between py-1 border-b border-white/[0.06]">
-              <span class="text-zinc-400">File Size</span>
-              <span class="font-mono font-bold text-zinc-200">{{ formatBytes(previewFile.size_bytes) }} ({{ previewFile.size_bytes.toLocaleString() }} bytes)</span>
-            </div>
-            <div class="flex justify-between py-1 border-b border-white/[0.06]">
-              <span class="text-zinc-400">Virtual Filesystem Path</span>
-              <span class="font-mono font-semibold text-emerald-400">{{ previewFile.virtual_path || previewFile.path }}</span>
-            </div>
-            <div class="flex justify-between py-1 border-b border-white/[0.06]">
-              <span class="text-zinc-400">Content Type (MIME)</span>
-              <span class="font-mono font-semibold text-zinc-200">{{ previewFile.mime || 'application/octet-stream' }}</span>
-            </div>
-            <div class="flex justify-between py-1 border-b border-white/[0.06]">
-              <span class="text-zinc-400">Origin Cloud Provider</span>
-              <span class="font-semibold text-zinc-200 flex items-center gap-1.5">
-                <UIcon :name="getProviderMeta(previewFile.provider).icon" class="size-3.5" />
-                {{ previewFile.account_label }}
-              </span>
-            </div>
-            <div class="flex justify-between py-1 border-b border-white/[0.06]">
-              <span class="text-zinc-400">Last Synchronized</span>
-              <span class="text-zinc-200">{{ formatDate(previewFile.modified_at) }}</span>
-            </div>
-            <div class="flex justify-between py-1">
-              <span class="text-zinc-400">Storage Architecture Model</span>
-              <span class="font-mono text-zinc-200">
-                {{ previewFile.is_chunked ? 'Model B (Distributed Chunked Store)' : 'Model A (Whole-File Pass Through)' }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <template #footer>
-        <div v-if="previewFile" class="flex items-center justify-between w-full">
-          <UButton
-            label="Delete File"
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            class="rounded-xl text-xs"
-            @click="filesStore.deleteFile(previewFile.id); isPreviewModalOpen = false"
-          />
-
-          <div class="flex items-center gap-2">
-            <UButton
-              label="Move Folder"
-              icon="i-lucide-folder-input"
-              color="neutral"
-              variant="outline"
-              class="rounded-xl text-xs"
-              @click="openMoveToFolder(previewFile); isPreviewModalOpen = false"
-            />
-            <UButton
-              label="Download File"
-              icon="i-lucide-download"
-              color="emerald"
-              variant="solid"
-              class="rounded-xl font-bold text-xs px-4 bg-emerald-600 hover:bg-emerald-500 text-white"
-              @click="handleDownload(previewFile)"
-            />
-          </div>
-        </div>
-      </template>
-    </UModal>
+      :file="previewFile"
+      @download="handleDownload"
+      @move-to-folder="openMoveToFolder"
+      @migrate-provider="openMoveModal"
+      @delete="openDeleteFile"
+      @rename="openRenameFile"
+    />
 
     <!-- Physical Migration Modal (Between Cloud Providers) -->
     <UModal
@@ -889,7 +889,7 @@ function confirmRenameFile() {
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isMoveModalOpen = false" />
-          <UButton label="Migrate Now" icon="i-lucide-arrow-right-left" color="emerald" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmMove" />
+          <UButton label="Migrate Now" icon="i-lucide-arrow-right-left" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmMove" />
         </div>
       </template>
     </UModal>
@@ -940,7 +940,7 @@ function confirmRenameFile() {
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isNewFolderModalOpen = false" />
-          <UButton label="Create Folder" color="emerald" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmCreateFolder" />
+          <UButton :loading="isBusy" label="Create Folder" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmCreateFolder" />
         </div>
       </template>
     </UModal>
@@ -983,7 +983,7 @@ function confirmRenameFile() {
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isRenameFolderModalOpen = false" />
-          <UButton label="Save Changes" color="emerald" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmRenameFolder" />
+          <UButton label="Save Changes" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmRenameFolder" />
         </div>
       </template>
     </UModal>
@@ -1012,19 +1012,37 @@ function confirmRenameFile() {
           <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1.5">
             <div class="flex items-center gap-2 text-rose-300 font-semibold">
               <UIcon name="i-lucide-alert-triangle" class="size-4 shrink-0" />
-              <span>Recursive Deletion Warning</span>
+              <span>Hapus permanen</span>
             </div>
             <p class="text-zinc-400 text-[11px] leading-relaxed">
-              Deleting <strong class="text-white font-mono">{{ folderToDelete.path }}</strong> will delete this virtual folder, its subfolders, and all indexed files contained within it.
+              <strong class="text-white font-mono">{{ folderToDelete.path }}</strong> —
+              hapus rekursif ikut menghapus subfolder <em>dan file fisiknya di provider</em>,
+              bukan cuma catatan di index.
             </p>
           </div>
+
+          <p v-if="actionError" class="text-[11px] text-red-400 leading-snug">{{ actionError }}</p>
         </div>
       </template>
 
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
-          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isDeleteFolderModalOpen = false" />
-          <UButton label="Delete Everything" color="error" class="rounded-xl font-bold" @click="confirmDeleteFolder" />
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isDeleteFolderModalOpen = false" />
+          <UButton
+            label="Hapus jika kosong"
+            color="neutral"
+            variant="soft"
+            class="rounded-xl font-semibold"
+            :loading="isBusy"
+            @click="confirmDeleteFolder(false)"
+          />
+          <UButton
+            label="Hapus beserta isinya"
+            color="error"
+            class="rounded-xl font-bold"
+            :loading="isBusy"
+            @click="confirmDeleteFolder(true)"
+          />
         </div>
       </template>
     </UModal>
@@ -1053,7 +1071,7 @@ function confirmRenameFile() {
           <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs space-y-1">
             <span class="text-zinc-400 block">File:</span>
             <span class="font-bold text-white block truncate">{{ fileToMoveVfs.name }}</span>
-            <span class="text-zinc-400 block mt-1">Current Virtual Path: <strong class="text-emerald-400 font-mono">{{ fileToMoveVfs.virtual_path || fileToMoveVfs.path }}</strong></span>
+            <span class="text-zinc-400 block mt-1">Current Virtual Path: <strong class="text-emerald-400 font-mono">{{ fileToMoveVfs.virtual_path }}</strong></span>
           </div>
 
           <div>
@@ -1088,7 +1106,7 @@ function confirmRenameFile() {
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isMoveToFolderModalOpen = false" />
-          <UButton label="Move to Folder" color="emerald" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmMoveToFolder" />
+          <UButton label="Move to Folder" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmMoveToFolder" />
         </div>
       </template>
     </UModal>
@@ -1125,13 +1143,54 @@ function confirmRenameFile() {
               @keyup.enter="confirmRenameFile"
             />
           </div>
+          <p v-if="actionError" class="text-[11px] text-red-400 leading-snug">{{ actionError }}</p>
         </div>
       </template>
 
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
-          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isRenameFileModalOpen = false" />
-          <UButton label="Save Name" color="emerald" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmRenameFile" />
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isRenameFileModalOpen = false" />
+          <UButton label="Save Name" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmRenameFile" />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Konfirmasi hapus file: objek fisik di provider ikut terhapus -->
+    <UModal
+      v-model:open="isDeleteFileModalOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold flex items-center gap-2 text-rose-400">
+            <UIcon name="i-lucide-trash-2" class="size-5" />
+            Hapus File
+          </h3>
+          <p class="text-xs text-zinc-400 mt-0.5">File dihapus dari provider, bukan hanya dari index.</p>
+        </div>
+      </template>
+
+      <template #body>
+        <div v-if="fileToDelete" class="space-y-3">
+          <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1">
+            <span class="font-bold text-white block truncate">{{ fileToDelete.name }}</span>
+            <span class="text-zinc-400 block">
+              Tersimpan di <strong class="text-zinc-300">{{ fileToDelete.account_label }}</strong> —
+              {{ formatBytes(fileToDelete.size_bytes) }}
+            </span>
+          </div>
+          <p v-if="actionError" class="text-[11px] text-red-400 leading-snug">{{ actionError }}</p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isDeleteFileModalOpen = false" />
+          <UButton label="Hapus" color="error" class="rounded-xl font-bold" :loading="isBusy" @click="confirmDeleteFile" />
         </div>
       </template>
     </UModal>

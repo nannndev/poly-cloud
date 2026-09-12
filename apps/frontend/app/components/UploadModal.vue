@@ -1,23 +1,20 @@
 <script setup lang="ts">
-import type { StorageProvider } from '~/types'
-
 const filesStore = useFilesStore()
 const accountsStore = useAccountsStore()
 const { formatBytes } = useFormatters()
+const toast = useToast()
 
 const isDragging = ref(false)
-const selectedTarget = ref<string>('auto')
 const selectedFolderId = ref<string>(filesStore.currentFolderId || '__root__')
 const fileInput = ref<HTMLInputElement | null>(null)
 
-// Sync destination folder whenever modal opens
+// Selaraskan folder tujuan dengan lokasi yang sedang dibuka tiap modal terbuka.
 watch(() => filesStore.isUploadModalOpen, (isOpen) => {
   if (isOpen) {
     selectedFolderId.value = filesStore.currentFolderId || '__root__'
   }
 })
 
-// Hierarchical folder options
 const folderOptions = computed(() => {
   return filesStore.allFoldersHierarchical.map(f => ({
     value: f.id === null ? '__root__' : f.id,
@@ -25,32 +22,9 @@ const folderOptions = computed(() => {
   }))
 })
 
-// Smart routing recommendation (account with most free bytes)
-const recommendedAccount = computed(() => {
-  const active = accountsStore.activeAccounts
-  if (!active.length) return null
-  return [...active].sort((a, b) => (b.free_bytes || 0) - (a.free_bytes || 0))[0]
-})
-
-const targetAccountOptions = computed(() => {
-  const options = [
-    {
-      value: 'auto',
-      label: recommendedAccount.value
-        ? `⚡ Smart Routing (Auto) → ${recommendedAccount.value.label} (${formatBytes(recommendedAccount.value.free_bytes)} free)`
-        : '⚡ Smart Routing (Auto)'
-    }
-  ]
-
-  accountsStore.activeAccounts.forEach(acc => {
-    options.push({
-      value: acc.id,
-      label: `${acc.label} (${formatBytes(acc.free_bytes)} free)`
-    })
-  })
-
-  return options
-})
+// Akun yang akan dipilih router untuk unggahan berikutnya. Ini prediksi untuk
+// ditampilkan saja — keputusan sebenarnya ada di backend (ADR-008).
+const recommendedAccount = computed(() => accountsStore.recommendedAccount)
 
 function getFileBadge(fileName: string) {
   const name = (fileName || '').toLowerCase()
@@ -146,66 +120,35 @@ function handleFileInput(e: Event) {
   if (target.files) {
     processFiles(Array.from(target.files))
   }
+  // Kosongkan agar memilih file yang sama dua kali tetap memicu change.
+  target.value = ''
 }
 
-function processFiles(fileList: File[]) {
-  let targetAcc = undefined
-  if (selectedTarget.value !== 'auto') {
-    const found = accountsStore.accounts.find(a => a.id === selectedTarget.value)
-    if (found) {
-      targetAcc = { id: found.id, label: found.label, provider: found.provider }
-    }
-  } else if (recommendedAccount.value) {
-    targetAcc = {
-      id: recommendedAccount.value.id,
-      label: recommendedAccount.value.label,
-      provider: recommendedAccount.value.provider
-    }
-  }
-
+async function processFiles(fileList: File[]) {
+  if (fileList.length === 0) return
   const folderId = selectedFolderId.value === '__root__' ? null : selectedFolderId.value
-  const folderObj = folderId ? filesStore.folders.find(f => f.id === folderId) : null
-  const folderPath = folderObj ? folderObj.path : '/'
 
-  for (const f of fileList) {
-    filesStore.simulateUpload({
-      name: f.name,
-      size: f.size || 2400000,
-      targetAccount: targetAcc,
-      targetFolderId: folderId,
-      targetFolderPath: folderPath
+  // Backend yang memilih akun tujuan; UI tak mengirim preferensi akun.
+  const results = await filesStore.uploadFiles(fileList, folderId)
+
+  const failed = results.filter(r => r instanceof Error)
+  if (failed.length > 0) {
+    toast.add({
+      title: `${failed.length} file gagal diunggah`,
+      description: friendlyMessage(failed[0]),
+      color: 'error'
+    })
+  } else {
+    toast.add({
+      title: fileList.length > 1 ? `${fileList.length} file terunggah` : 'File terunggah',
+      description: 'Router memilih akun tujuan berdasarkan sisa ruang terbanyak.',
+      color: 'success'
     })
   }
 }
 
 function triggerFileInput() {
   fileInput.value?.click()
-}
-
-function triggerDemoUpload(name: string, sizeBytes: number) {
-  let targetAcc = undefined
-  if (selectedTarget.value !== 'auto') {
-    const found = accountsStore.accounts.find(a => a.id === selectedTarget.value)
-    if (found) targetAcc = { id: found.id, label: found.label, provider: found.provider }
-  } else if (recommendedAccount.value) {
-    targetAcc = {
-      id: recommendedAccount.value.id,
-      label: recommendedAccount.value.label,
-      provider: recommendedAccount.value.provider
-    }
-  }
-
-  const folderId = selectedFolderId.value === '__root__' ? null : selectedFolderId.value
-  const folderObj = folderId ? filesStore.folders.find(f => f.id === folderId) : null
-  const folderPath = folderObj ? folderObj.path : '/'
-
-  filesStore.simulateUpload({
-    name,
-    size: sizeBytes,
-    targetAccount: targetAcc,
-    targetFolderId: folderId,
-    targetFolderPath: folderPath
-  })
 }
 </script>
 
@@ -228,7 +171,7 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
           <div>
             <h2 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
               Smart Multi-Cloud File Upload
-              <UBadge label="Zero Vendor Lock-in" color="emerald" variant="subtle" size="xs" class="font-medium text-[9px] rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" />
+              <UBadge label="Zero Vendor Lock-in" color="primary" variant="subtle" size="xs" class="font-medium text-[9px] rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" />
             </h2>
             <p class="text-xs text-zinc-400 mt-0.5 leading-relaxed max-w-lg">
               Dynamic animated tracker with real-time transfer telemetry, smart routing, and instant file synchronization.
@@ -268,7 +211,7 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
             />
           </div>
 
-          <!-- Placement 2: Physical Cloud Storage Target -->
+          <!-- Tujuan fisik ditentukan backend, bukan dipilih user (ADR-008) -->
           <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-2">
             <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
               <span class="flex items-center gap-2">
@@ -277,13 +220,30 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
               </span>
               <span class="text-[10px] text-zinc-400 font-mono">Physical</span>
             </div>
-            <USelect
-              v-model="selectedTarget"
-              :items="targetAccountOptions"
-              class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
-              icon="i-lucide-layers-3"
-              size="md"
-            />
+
+            <div
+              v-if="recommendedAccount"
+              class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#16161a] border border-white/[0.08]"
+            >
+              <UIcon name="i-lucide-zap" class="size-4 text-emerald-400 shrink-0" />
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-white truncate">{{ recommendedAccount.label }}</p>
+                <p class="text-[10px] text-zinc-500">
+                  Sisa ruang terbanyak ({{ formatBytes(recommendedAccount.free_bytes) }}) — backend
+                  memutuskan tujuan final saat unggahan berjalan.
+                </p>
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-amber-500/[0.06] border border-amber-500/20"
+            >
+              <UIcon name="i-lucide-triangle-alert" class="size-4 text-amber-400 shrink-0" />
+              <p class="text-[11px] text-zinc-300">
+                Belum ada akun aktif. Hubungkan akun dulu sebelum mengunggah.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -319,41 +279,8 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
             Drag files here or <span class="text-emerald-400 underline underline-offset-4 decoration-emerald-400/40 hover:decoration-emerald-400">browse from computer</span>
           </p>
           <p class="text-xs text-zinc-400 text-center mt-1 max-w-sm">
-            Automatic distributed chunking activates for files over 100 MB.
+            File dialirkan langsung ke provider — tak ada salinan yang mengendap di server.
           </p>
-
-          <!-- Quick Test Demo Pills -->
-          <div class="mt-4 pt-3.5 border-t border-white/[0.06] w-full flex flex-col sm:flex-row items-center justify-center gap-2 text-xs" @click.stop>
-            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Demo Animation:</span>
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                @click="triggerDemoUpload('create-ui.xlsx', 2411724)"
-              >
-                <UIcon name="i-lucide-file-spreadsheet" class="size-3.5" />
-                <span>create-ui.xlsx (2.3 MB)</span>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-800/70 text-zinc-300 hover:bg-zinc-700 hover:text-white border border-white/[0.08] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                @click="triggerDemoUpload('enterprise-spec.pdf', 14885000)"
-              >
-                <UIcon name="i-lucide-file-text" class="size-3.5" />
-                <span>spec.pdf (14.2 MB)</span>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-800/70 text-zinc-300 hover:bg-zinc-700 hover:text-white border border-white/[0.08] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                @click="triggerDemoUpload('docker-compose.yaml', 85000)"
-              >
-                <UIcon name="i-lucide-file-code" class="size-3.5" />
-                <span>docker.yaml (85 KB)</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <!-- Active Upload Progress Queue (Create UI Animated Card Rows) -->
@@ -369,7 +296,7 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
               size="xs"
               label="Clear Completed"
               class="text-zinc-400 hover:text-white"
-              @click="filesStore.uploadJobs = filesStore.uploadJobs.filter(j => j.status !== 'completed')"
+              @click="filesStore.clearFinishedJobs()"
             />
           </div>
 
@@ -381,8 +308,8 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
               :class="[
                 job.status === 'completed'
                   ? 'border-emerald-500/30 bg-[#121614]'
-                  : job.status === 'paused'
-                  ? 'border-white/[0.08] bg-[#151518]'
+                  : job.status === 'error'
+                  ? 'border-red-500/30 bg-[#161213]'
                   : 'border-white/[0.08] bg-[#131317] hover:border-emerald-500/30'
               ]"
             >
@@ -418,11 +345,19 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
                       </span>
 
                       <span
-                        v-else-if="job.status === 'paused'"
+                        v-else-if="job.status === 'error'"
+                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-red-500/15 text-red-400 font-medium text-[10px] border border-red-500/25"
+                      >
+                        <UIcon name="i-lucide-circle-alert" class="size-3" />
+                        Gagal
+                      </span>
+
+                      <span
+                        v-else-if="job.status === 'cancelled'"
                         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-medium text-[10px] border border-white/[0.08]"
                       >
-                        <span class="size-1.5 rounded-full bg-zinc-400" />
-                        Paused
+                        <UIcon name="i-lucide-ban" class="size-3" />
+                        Dibatalkan
                       </span>
 
                       <span
@@ -451,12 +386,6 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
                         {{ formatBytes(job.size_bytes) }}
                       </span>
 
-                      <!-- Speed indicator -->
-                      <template v-if="job.status === 'uploading' && job.speed_mbps">
-                        <span class="text-zinc-600">•</span>
-                        <span class="font-mono text-[10px] text-emerald-400">{{ job.speed_mbps }} MB/s</span>
-                      </template>
-
                       <!-- VFS Folder Destination -->
                       <span class="text-zinc-600 hidden sm:inline">•</span>
                       <span class="text-[11px] text-zinc-400 hidden sm:inline-flex items-center gap-1 font-mono">
@@ -464,53 +393,48 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
                         <span class="text-zinc-300">{{ job.target_folder_path || '/' }}</span>
                       </span>
 
-                      <!-- Cloud Target Pill -->
-                      <span class="text-zinc-600 hidden sm:inline">•</span>
-                      <span class="text-[11px] text-zinc-400 hidden sm:inline-flex items-center gap-1 font-mono">
-                        → <strong class="text-zinc-300 font-normal">{{ job.target_account_label }}</strong>
-                      </span>
+                      <!-- Akun tujuan baru diketahui setelah router memutuskan -->
+                      <template v-if="job.target_account_label">
+                        <span class="text-zinc-600 hidden sm:inline">•</span>
+                        <span class="text-[11px] text-zinc-400 hidden sm:inline-flex items-center gap-1 font-mono">
+                          → <strong class="text-zinc-300 font-normal">{{ job.target_account_label }}</strong>
+                        </span>
+                      </template>
                     </div>
+
+                    <p v-if="job.error_message" class="text-[11px] text-red-400 mt-1.5 leading-snug">
+                      {{ job.error_message }}
+                    </p>
                   </div>
                 </div>
 
-                <!-- Right Action Buttons (Pause, Resume, Cancel) -->
+                <!-- Aksi: batalkan yang berjalan, singkirkan yang selesai -->
                 <div class="flex items-center gap-1.5 shrink-0">
-                  <!-- Pause Button -->
-                  <button
-                    v-if="job.status === 'uploading'"
-                    type="button"
-                    title="Pause Upload"
-                    class="flex size-7 items-center justify-center rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/[0.08] transition-all cursor-pointer shadow-xs"
-                    @click="filesStore.pauseUpload(job.id)"
-                  >
-                    <UIcon name="i-lucide-pause" class="size-3.5 fill-current" />
-                  </button>
-
-                  <!-- Resume Button -->
-                  <button
-                    v-else-if="job.status === 'paused'"
-                    type="button"
-                    title="Resume Upload"
-                    class="flex size-7 items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/40 transition-all cursor-pointer shadow-xs"
-                    @click="filesStore.resumeUpload(job.id)"
-                  >
-                    <UIcon name="i-lucide-play" class="size-3.5 fill-current ml-0.5" />
-                  </button>
-
-                  <!-- Completed Success Checkmark Badge -->
                   <div
-                    v-else-if="job.status === 'completed'"
+                    v-if="job.status === 'completed'"
                     class="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
                   >
                     <UIcon name="i-lucide-check" class="size-3.5 stroke-[2.5]" />
                   </div>
 
-                  <!-- Cancel / Dismiss Button -->
+                  <!-- Upload berjalan bisa dibatalkan; request diputus dan
+                       objek tak pernah tercatat di index. -->
                   <button
+                    v-if="job.status === 'uploading' || job.status === 'routing'"
                     type="button"
-                    :title="job.status === 'completed' ? 'Dismiss' : 'Cancel Upload'"
+                    title="Batalkan upload"
                     class="flex size-7 items-center justify-center rounded-lg bg-zinc-800/60 hover:bg-rose-500/20 hover:text-rose-400 text-zinc-400 border border-white/[0.06] transition-all cursor-pointer"
                     @click="filesStore.cancelUpload(job.id)"
+                  >
+                    <UIcon name="i-lucide-x" class="size-3.5" />
+                  </button>
+
+                  <button
+                    v-else
+                    type="button"
+                    title="Singkirkan dari daftar"
+                    class="flex size-7 items-center justify-center rounded-lg bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-white/[0.06] transition-all cursor-pointer"
+                    @click="filesStore.dismissJob(job.id)"
                   >
                     <UIcon name="i-lucide-x" class="size-3.5" />
                   </button>
@@ -522,10 +446,10 @@ function triggerDemoUpload(name: string, sizeBytes: number) {
                 <div
                   class="h-full rounded-full transition-all duration-300 ease-out relative overflow-hidden"
                   :class="[
-                    job.status === 'completed'
-                      ? 'bg-emerald-500'
-                      : job.status === 'paused'
-                      ? 'bg-zinc-500'
+                    job.status === 'error'
+                      ? 'bg-red-500'
+                      : job.status === 'cancelled'
+                      ? 'bg-zinc-600'
                       : 'bg-emerald-500'
                   ]"
                   :style="{ width: `${job.progress}%` }"

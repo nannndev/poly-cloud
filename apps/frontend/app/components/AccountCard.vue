@@ -22,20 +22,20 @@ const progressColor = computed(() => {
   if (props.account.status === 'needs_reconnect') return 'warning'
   if (usagePercent.value > 90) return 'error'
   if (usagePercent.value > 75) return 'warning'
-  return 'emerald'
+  return 'primary'
 })
+
+const toast = useToast()
+const isDisconnectOpen = ref(false)
+const isDisconnecting = ref(false)
+const isReconnecting = ref(false)
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [
   [
     {
       label: 'Sync Metadata Now',
       icon: 'i-lucide-refresh-cw',
-      onSelect: () => accountsStore.syncAccount(props.account.id)
-    },
-    {
-      label: 'Copy rclone Remote Name',
-      icon: 'i-lucide-terminal',
-      onSelect: () => navigator.clipboard?.writeText(props.account.rclone_remote || `acc_${props.account.id.replace('acc-', '')}:`)
+      onSelect: () => { void handleSync() }
     },
     {
       label: 'Copy Account ID',
@@ -48,10 +48,48 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
       label: 'Disconnect Account',
       icon: 'i-lucide-trash-2',
       color: 'error',
-      onSelect: () => accountsStore.removeAccount(props.account.id)
+      onSelect: () => { isDisconnectOpen.value = true }
     }
   ]
 ])
+
+async function handleSync() {
+  try {
+    const res = await accountsStore.syncAccount(props.account.id)
+    toast.add({
+      title: `${props.account.label} tersinkron`,
+      description: `${res.files_indexed} file terindeks.`,
+      color: 'success'
+    })
+  } catch (err) {
+    toast.add({ title: 'Sync gagal', description: friendlyMessage(err), color: 'error' })
+  }
+}
+
+async function handleDisconnect() {
+  isDisconnecting.value = true
+  try {
+    await accountsStore.removeAccount(props.account.id)
+    isDisconnectOpen.value = false
+    toast.add({ title: `${props.account.label} dicabut`, color: 'success' })
+  } catch (err) {
+    toast.add({ title: 'Gagal mencabut akun', description: friendlyMessage(err), color: 'error' })
+  } finally {
+    isDisconnecting.value = false
+  }
+}
+
+// Token yang tak lagi berlaku hanya bisa dipulihkan lewat consent ulang.
+async function handleReconnect() {
+  isReconnecting.value = true
+  try {
+    const authUrl = await accountsStore.reconnectAccount(props.account.id)
+    window.location.href = authUrl
+  } catch (err) {
+    toast.add({ title: 'Tidak bisa reconnect', description: friendlyMessage(err), color: 'error' })
+    isReconnecting.value = false
+  }
+}
 </script>
 
 <template>
@@ -78,16 +116,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
               {{ account.label }}
             </h3>
             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-              <span class="text-[11px] text-zinc-500 truncate font-mono">
-                {{ account.email || providerMeta.name }}
-              </span>
-              <span
-                v-if="account.rclone_remote"
-                class="text-[9px] px-1.5 py-0.5 rounded-md bg-zinc-900 border border-white/[0.08] text-emerald-400 font-mono"
-                title="Internal rclone daemon remote"
-              >
-                {{ account.rclone_remote }}
-              </span>
+              <span class="text-[11px] text-zinc-500 truncate">{{ providerMeta.name }}</span>
             </div>
           </div>
         </div>
@@ -96,7 +125,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
           <UBadge
             v-if="account.status === 'active'"
             label="Connected"
-            color="emerald"
+            color="primary"
             variant="subtle"
             size="xs"
             class="rounded-lg px-2 py-0.5 font-medium text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -105,6 +134,14 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
             v-else-if="account.status === 'needs_reconnect'"
             label="Needs Reconnect"
             color="warning"
+            variant="subtle"
+            size="xs"
+            class="rounded-lg px-2 py-0.5 font-medium text-[10px]"
+          />
+          <UBadge
+            v-else-if="account.status === 'syncing'"
+            label="Syncing"
+            color="info"
             variant="subtle"
             size="xs"
             class="rounded-lg px-2 py-0.5 font-medium text-[10px]"
@@ -133,24 +170,32 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
 
       <!-- Storage Metrics & Visual Gauge -->
       <div class="p-3.5 rounded-2xl border border-white/[0.06] bg-zinc-900/60 space-y-2.5">
-        <div class="flex items-center justify-between text-xs">
-          <div class="flex items-center gap-1.5 text-zinc-400">
-            <UIcon name="i-lucide-database" class="size-3.5 text-emerald-400" />
-            <span>Capacity Utilized</span>
+        <!-- Sebagian provider (mis. S3) tak melaporkan kuota; jangan tampilkan 0% seolah kosong. -->
+        <template v-if="account.total_bytes > 0">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-1.5 text-zinc-400">
+              <UIcon name="i-lucide-database" class="size-3.5 text-emerald-400" />
+              <span>Capacity Utilized</span>
+            </div>
+            <span class="font-semibold font-mono text-zinc-200">{{ usagePercent }}%</span>
           </div>
-          <span class="font-semibold font-mono text-zinc-200">{{ usagePercent }}%</span>
-        </div>
 
-        <UProgress
-          :model-value="usagePercent"
-          :color="progressColor"
-          size="sm"
-          class="rounded-full"
-        />
+          <UProgress
+            :model-value="usagePercent"
+            :color="progressColor"
+            size="sm"
+            class="rounded-full"
+          />
 
-        <div class="flex items-center justify-between text-[11px] font-mono">
-          <span class="text-zinc-500">{{ formatBytes(account.used_bytes || 0) }} used</span>
-          <span class="text-emerald-400 font-medium">{{ formatBytes(account.free_bytes || 0) }} free</span>
+          <div class="flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-500">{{ formatBytes(account.used_bytes) }} used</span>
+            <span class="text-emerald-400 font-medium">{{ formatBytes(account.free_bytes) }} free</span>
+          </div>
+        </template>
+
+        <div v-else class="flex items-center gap-2 text-xs text-zinc-400">
+          <UIcon name="i-lucide-infinity" class="size-3.5 text-zinc-500" />
+          <span>Provider ini tidak melaporkan kuota</span>
         </div>
       </div>
     </div>
@@ -159,7 +204,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
     <div class="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
       <div class="flex items-center gap-1.5 text-[11px] text-muted">
         <UIcon name="i-lucide-refresh-cw" class="size-3" :class="[isSyncingThis ? 'animate-spin text-sky-500' : '']" />
-        <span>{{ formatDate(account.last_synced || '') }}</span>
+        <span>{{ account.last_synced ? formatDate(account.last_synced) : 'Belum pernah sync' }}</span>
       </div>
 
       <div class="flex items-center gap-2">
@@ -171,7 +216,8 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
           variant="solid"
           size="xs"
           class="rounded-xl font-bold"
-          @click="accountsStore.reconnectAccount(account.id)"
+          :loading="isReconnecting"
+          @click="handleReconnect"
         />
         <UButton
           v-else
@@ -182,9 +228,44 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [
           size="xs"
           class="rounded-xl font-medium"
           :loading="isSyncingThis"
-          @click="accountsStore.syncAccount(account.id)"
+          @click="handleSync"
         />
       </div>
     </div>
+
+    <!-- Mencabut akun menghapus remote rclone dan index-nya, tapi tak menyentuh
+         file yang ada di provider. -->
+    <UModal
+      v-model:open="isDisconnectOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-3',
+        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold flex items-center gap-2 text-rose-400">
+            <UIcon name="i-lucide-unlink" class="size-5" />
+            Cabut Akun
+          </h3>
+        </div>
+      </template>
+
+      <template #body>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          <strong class="text-white">{{ account.label }}</strong> akan dilepas dari platform:
+          token dan index file-nya dihapus. File yang sudah ada di provider
+          <strong class="text-zinc-200">tidak ikut dihapus</strong>.
+        </p>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton label="Batal" color="neutral" variant="ghost" class="rounded-xl" :disabled="isDisconnecting" @click="isDisconnectOpen = false" />
+          <UButton label="Cabut Akun" color="error" class="rounded-xl font-bold" :loading="isDisconnecting" @click="handleDisconnect" />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

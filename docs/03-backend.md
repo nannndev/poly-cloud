@@ -37,13 +37,21 @@ type Engine interface {
     DeleteRemote(ctx context.Context, name string) error
     // Operasi file
     ListRemotes(ctx context.Context) ([]string, error)
-    List(ctx context.Context, remote, path string) ([]FileEntry, error)
+    List(ctx context.Context, remote, path string, recurse bool) ([]RemoteEntry, error)
+    Stat(ctx context.Context, remote, path string) (*RemoteEntry, error)
     About(ctx context.Context, remote string) (Quota, error)
-    UploadStream(ctx context.Context, r io.Reader, remote, dest string) error
+    Mkdir(ctx context.Context, remote, path string) error
+    UploadStream(ctx context.Context, r io.Reader, remote, destDir, name string) error
     Download(ctx context.Context, remote, src string, w io.Writer) error
     Move(ctx context.Context, srcRemote, src, dstRemote, dst string) error
     Delete(ctx context.Context, remote, path string) error
+    Ping(ctx context.Context) error
 }
+```
+Parameter `remote` di operasi file menerima **fs target**, bukan sekadar nama remote:
+`acc_x` untuk provider drive, `acc_x:bucket` untuk provider penyimpanan objek
+(`Account.FsTarget()`). Operasi `config/*` tetap memakai nama remote mentah.
+```go
 ```
 Impl produksi = `RcloneDaemonEngine` yang bicara ke **`rclone rcd`** (RC API) — ini yang
 memungkinkan provisioning remote dinamis (`config/create`) dari OAuth backend. Daemon wajib
@@ -88,16 +96,24 @@ func (r *Router) Pick(ctx, accounts []Account, size int64) (*Account, error)
 - Operasi idempotent bila mungkin (mis. upsert index by provider_ref).
 
 ## 9. Konfigurasi (env)
-`DATABASE_URL`, `RCLONE_CONFIG_PATH`, `TOKEN_ENC_KEY` (32-byte), `OAUTH_REDIRECT_URL`,
-`PORT`, `LOG_LEVEL`. Lihat `.env.example`.
+`DATABASE_URL`, `TOKEN_ENC_KEY`, `OAUTH_REDIRECT_URL`, `CORS_ORIGINS`, `PORT`,
+`LOG_LEVEL`, `ROUTING_STRATEGY`, `RCLONE_RC_URL`/`RCLONE_RC_USER`/`RCLONE_RC_PASS`,
+`RCLONE_BASE_DIR`, dan pasangan client id/secret per provider OAuth.
+Lihat `.env.example`.
+
+`TOKEN_ENC_KEY` boleh berapa pun panjangnya (minimal 16 karakter); kunci AES-256
+diturunkan darinya lewat SHA-256.
 
 ## 10. Struktur Paket
 ```
-internal/http      handlers, middleware, sse
-internal/storage   StorageService, WholeFileStore
-internal/engine    RcloneEngine
+internal/domain    tipe inti + sentinel error (tanpa dependensi internal)
+internal/httpapi   handlers, middleware, router, SSE hub
+internal/storage   Service, WholeFileStore, AccountService, Deps
+internal/engine    Engine interface + RcloneDaemon (RC API)
 internal/routing   Router
-internal/index     repo DB (accounts, files, blocks)
-internal/auth      oauth, token crypto, lifecycle
+internal/index     repo DB (accounts, folders, files, blocks)
+internal/auth      oauth provider spec, token crypto, lifecycle
 internal/config    env
 ```
+`internal/domain` dipisah supaya `engine` bisa memetakan error ke sentinel tanpa
+bergantung pada `storage` — menghindari import cycle.

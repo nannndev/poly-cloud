@@ -31,6 +31,7 @@ erDiagram
         text provider
         text label
         text rclone_remote
+        text root_path
         bigint total_bytes
         bigint used_bytes
         text status
@@ -77,7 +78,8 @@ create table accounts (
   user_id       uuid not null references users(id) on delete cascade,
   provider      text not null,               -- 'gdrive'|'dropbox'|'onedrive'|'s3'|'b2'
   label         text not null,
-  rclone_remote text not null,               -- 'gdrive1:'
+  rclone_remote text not null,               -- 'acc_<uuid tanpa dash>'
+  root_path     text not null default '',    -- bucket/prefix; '' untuk provider drive
   total_bytes   bigint,
   used_bytes    bigint,
   status        text not null default 'active', -- 'active'|'needs_reconnect'|'error'
@@ -150,6 +152,10 @@ Folder virtual — hanya ada di DB, tak pernah dibuat di provider (lihat [doc 09
 - **`user_id` ada di mana-mana** → multi-tenant siap; aktifkan Row-Level Security (RLS)
   saat pindah ke mode multi-user.
 - **Quota di-cache** di `accounts` (bukan query provider tiap saat) → dashboard & routing cepat.
+- **`root_path` memisahkan provider objek dari provider drive.** Akar remote S3/B2/R2
+  adalah daftar bucket, bukan tempat menaruh objek, jadi account provider objek
+  menyimpan nama bucket-nya di sini dan operasi file menargetkan `remote:bucket`.
+  Provider drive (GDrive/Dropbox/OneDrive) mengosongkannya.
 - **`virtual_path` + `folders`** memisahkan struktur folder tampilan dari lokasi fisik
   provider. Folder yang user buat hanya hidup di DB; provider tak tahu strukturnya.
   Detail lengkap: [doc 09 — Virtual Filesystem](09-virtual-filesystem.md).

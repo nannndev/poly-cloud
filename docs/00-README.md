@@ -36,4 +36,7 @@ S3, Backblaze B2, dll) dan menampilkannya sebagai satu ruang penyimpanan terpadu
 - **Virtual path** — path folder logis (mis. `/Kerjaan/laporan.pdf`) yang tak tercermin di provider.
 
 ## Status
-Draft v1 — dokumen desain, mendahului implementasi.
+Model A terimplementasi end-to-end, backend dan frontend sudah tersambung:
+connect akun (OAuth + key), provisioning remote, index & kuota, VFS folder,
+upload/download stream-through, move antar akun, dan SSE progress.
+Model B (chunked) belum — `StorageService` adalah titik tukarnya.

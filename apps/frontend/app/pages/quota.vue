@@ -1,7 +1,21 @@
 <script setup lang="ts">
+import type { FileEntry } from '~/types'
+
 const accountsStore = useAccountsStore()
 const filesStore = useFilesStore()
 const { formatBytes, getProviderMeta } = useFormatters()
+
+// Statistik harus mencakup seluruh file, bukan hanya folder yang sedang dibuka.
+const allFiles = ref<FileEntry[]>([])
+
+await useAsyncData('quota-page', async () => {
+  const [, files] = await Promise.all([
+    accountsStore.loadAll().catch(() => null),
+    filesStore.fetchAllFiles().catch(() => [] as FileEntry[])
+  ])
+  allFiles.value = files || []
+  return true
+}, { server: false, default: () => false })
 
 const categoryStats = computed(() => {
   let docsBytes = 0
@@ -9,7 +23,7 @@ const categoryStats = computed(() => {
   let archivesBytes = 0
   let codeBytes = 0
 
-  filesStore.files.forEach(f => {
+  allFiles.value.forEach(f => {
     const mime = (f.mime || '').toLowerCase()
     const name = f.name.toLowerCase()
     if (mime.includes('image') || mime.includes('video') || mime.includes('audio') || name.endsWith('.mp4') || name.endsWith('.png')) {
@@ -47,7 +61,7 @@ const categoryStats = computed(() => {
               <h1 class="font-bold text-base text-zinc-100">Storage & Quota Analytics</h1>
               <UBadge
                 label="Realtime Aggregate"
-                color="emerald"
+                color="primary"
                 variant="subtle"
                 size="xs"
                 class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium"
@@ -157,7 +171,7 @@ const categoryStats = computed(() => {
 
                   <UProgress
                     :model-value="Math.round(((acc.used_bytes || 0) / (acc.total_bytes || 1)) * 100)"
-                    color="emerald"
+                    color="primary"
                     size="xs"
                   />
 
@@ -176,7 +190,7 @@ const categoryStats = computed(() => {
                   <UIcon name="i-lucide-pie-chart" class="size-4 text-emerald-400" />
                   Indexed File Categories
                 </h3>
-                <span class="text-xs text-zinc-500">{{ filesStore.files.length }} Total Files</span>
+                <span class="text-xs text-zinc-500">{{ allFiles.length }} Total Files</span>
               </div>
 
               <div class="space-y-3">

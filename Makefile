@@ -1,4 +1,4 @@
-.PHONY: dev build down logs
+.PHONY: dev build down logs test fmt
 
 dev:
 	docker compose up --build
@@ -11,3 +11,11 @@ down:
 
 logs:
 	docker compose logs -f
+
+# Test & format backend lewat container Go — tak butuh toolchain Go lokal.
+test:
+	docker run --rm -v "$(CURDIR)/apps/backend":/src -w /src golang:1.25-alpine \
+		sh -c "gofmt -l . && go vet ./... && go test ./..."
+
+fmt:
+	docker run --rm -v "$(CURDIR)/apps/backend":/src -w /src golang:1.25-alpine gofmt -w .

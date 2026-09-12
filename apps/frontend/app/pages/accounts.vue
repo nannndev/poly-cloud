@@ -1,8 +1,11 @@
 <script setup lang="ts">
+const route = useRoute()
 const accountsStore = useAccountsStore()
 const { formatBytes } = useFormatters()
+const toast = useToast()
 
-const isConnectModalOpen = ref(false)
+// ?connect=1 dipakai halaman callback untuk membuka modal setelah percobaan gagal.
+const isConnectModalOpen = ref(route.query.connect === '1')
 const selectedFilter = ref<'all' | 'active' | 'attention'>('all')
 const isSyncingAll = ref(false)
 
@@ -16,12 +19,30 @@ const filteredAccounts = computed(() => {
   return accountsStore.accounts
 })
 
+await useAsyncData('accounts-page', () => accountsStore.loadAll().then(() => true), {
+  server: false,
+  default: () => false
+})
+
 async function handleSyncAll() {
   isSyncingAll.value = true
+  let failed = 0
+  // Berurutan supaya provider tak dibanjiri permintaan sekaligus; satu akun
+  // gagal tak boleh menghentikan sisanya.
   for (const acc of accountsStore.accounts) {
-    await accountsStore.syncAccount(acc.id)
+    try {
+      await accountsStore.syncAccount(acc.id)
+    } catch {
+      failed++
+    }
   }
   isSyncingAll.value = false
+
+  if (failed > 0) {
+    toast.add({ title: `${failed} akun gagal disinkronkan`, color: 'warning' })
+  } else if (accountsStore.accounts.length > 0) {
+    toast.add({ title: 'Semua akun tersinkron', color: 'success' })
+  }
 }
 </script>
 
@@ -39,7 +60,7 @@ async function handleSyncAll() {
               <h1 class="font-bold text-base text-highlighted">Connected Cloud Accounts</h1>
               <UBadge
                 :label="`${accountsStore.accounts.length} Connected Accounts`"
-                color="emerald"
+                color="primary"
                 variant="subtle"
                 size="xs"
                 class="rounded-lg font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -60,7 +81,7 @@ async function handleSyncAll() {
             <UButton
               label="Connect New Account"
               icon="i-lucide-plus"
-              color="emerald"
+              color="primary"
               variant="solid"
               class="rounded-xl font-semibold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 transition-all cursor-pointer"
               @click="isConnectModalOpen = true"
@@ -82,7 +103,7 @@ async function handleSyncAll() {
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <h3 class="font-bold text-base text-zinc-100">Multi-Provider Storage Mesh</h3>
-                  <UBadge label="Zero Vendor Lock-in" color="emerald" variant="subtle" size="xs" class="rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]" />
+                  <UBadge label="Zero Vendor Lock-in" color="primary" variant="subtle" size="xs" class="rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]" />
                 </div>
                 <p class="text-xs text-zinc-400 max-w-xl leading-relaxed">
                   Poly Cloud aggregates Google Drive, OneDrive, Dropbox, and AWS S3 into a single unified virtual drive with automated smart routing and deduplication.
@@ -109,7 +130,7 @@ async function handleSyncAll() {
                 label="All Providers"
                 :badge="`${accountsStore.accounts.length}`"
                 size="xs"
-                :color="selectedFilter === 'all' ? 'emerald' : 'neutral'"
+                :color="selectedFilter === 'all' ? 'primary' : 'neutral'"
                 :variant="selectedFilter === 'all' ? 'solid' : 'ghost'"
                 class="rounded-xl font-medium"
                 @click="selectedFilter = 'all'"
@@ -118,7 +139,7 @@ async function handleSyncAll() {
                 label="Active & Synced"
                 :badge="`${accountsStore.activeAccounts.length}`"
                 size="xs"
-                :color="selectedFilter === 'active' ? 'emerald' : 'neutral'"
+                :color="selectedFilter === 'active' ? 'primary' : 'neutral'"
                 :variant="selectedFilter === 'active' ? 'solid' : 'ghost'"
                 class="rounded-xl font-medium"
                 @click="selectedFilter = 'active'"

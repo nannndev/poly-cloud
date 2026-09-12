@@ -10,7 +10,8 @@ export function useFormatters() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
   }
 
-  function formatDate(dateStr: string): string {
+  // modified_at bisa null untuk file yang provider-nya tak melaporkan waktu ubah.
+  function formatDate(dateStr: string | null | undefined): string {
     if (!dateStr) return '-'
     const date = new Date(dateStr)
     if (isNaN(date.getTime())) return '-'

@@ -22,16 +22,42 @@ List account terhubung + kuota.
 ]
 ```
 
+### `GET /providers`
+Provider yang tersedia + kesiapannya. UI memakai `configured` untuk menandai
+provider OAuth yang kredensial platformnya belum diisi di env backend.
+```json
+[ { "provider":"gdrive","kind":"oauth","configured":false },
+  { "provider":"s3","kind":"keys","configured":true,
+    "fields":["provider","access_key_id","secret_access_key","region","endpoint","location_constraint","acl","bucket"],
+    "required":["access_key_id","secret_access_key","bucket"] } ]
+```
+
 ### `POST /accounts/connect`
-Mulai OAuth. Body: `{ "provider":"gdrive","label":"GDrive utama" }`.
+Dua bentuk, tergantung `kind` provider.
+
+**OAuth** (`gdrive`/`dropbox`/`onedrive`) — body: `{ "provider":"gdrive","label":"GDrive utama" }`.
 Resp: `{ "auth_url":"https://accounts.google.com/o/oauth2/..." }` → frontend redirect.
+Kredensial OAuth platform belum diset → `400 INVALID_ARGUMENT`.
+
+**Berbasis key** (`s3`/`b2`/`r2`) — tanpa redirect; account langsung jadi:
+```json
+{ "provider":"s3", "label":"Arsip", "fields": {
+    "access_key_id":"...", "secret_access_key":"...",
+    "endpoint":"https://s3.example.com", "region":"us-east-1",
+    "bucket":"nama-bucket" } }
+```
+Resp `201`: `{ "account_id":"uuid","status":"active","account":{...} }`.
+`bucket` wajib: akar remote penyimpanan objek adalah daftar bucket, bukan tempat
+menaruh file — nilainya jadi akar penyimpanan account (`accounts.root_path`).
 
 ### `POST /accounts/callback`
 Tukar code jadi token. Body: `{ "provider":"gdrive","code":"...","state":"..." }`.
 Resp: `{ "account_id":"uuid","status":"active" }`. Memicu initial sync.
 
 ### `POST /accounts/{id}/sync`
-Trigger sync ulang index & kuota account. Resp: `{ "synced":true,"files_indexed":1234 }`.
+Trigger sync ulang index & kuota account.
+Resp: `{ "synced":true,"files_indexed":1234,"total_bytes":0,"used_bytes":0,"free_bytes":0 }`.
+Provider tanpa dukungan `about` mengembalikan kuota 0 — bukan kegagalan.
 
 ### `DELETE /accounts/{id}`
 Cabut account (hapus token & index terkait). Resp: `204`.
@@ -53,17 +79,30 @@ List file di path terpadu (dari DB cache).
 ### `GET /files/search?q=laporan&type=pdf&min_size=0&account_id=`
 Search lintas account. Resp: sama seperti list `items`.
 
-### `POST /files/upload?path=/`
-Upload stream. Body: multipart/stream file. Backend pilih account (smart routing).
-Header respons boleh menyertakan account terpilih. Progres via SSE (lihat Events).
-Resp akhir:
+### `POST /files/upload?folder_id=&name=&job_id=&size=`
+Upload stream. Body boleh multipart **atau** byte mentah (`application/octet-stream`).
+Nama file diambil dari `?name=`, header `X-File-Name`, atau nama part multipart.
+Tujuan folder dari `?folder_id=` atau `?path=` (kosong = root).
+
+`job_id` opsional: isi dengan id yang sama seperti yang dipakai membuka SSE agar
+progres bisa diikuti sejak byte pertama; kalau kosong, backend membuatnya dan
+mengembalikannya di header `X-Job-Id`. `size` melengkapi total byte untuk
+progress bar saat body multipart (Content-Length tak menggambarkan ukuran file).
+
+Backend memilih account via smart routing. Nama yang bentrok di folder yang sama
+di-suffix otomatis (`laporan (1).pdf`).
+Resp `201`:
 ```json
-{ "id":"uuid","name":"foto.jpg","account_id":"uuid","account_label":"GDrive-2","routed_by":"most-free" }
+{ "id":"uuid","name":"foto.jpg","account_id":"uuid","account_label":"GDrive-2",
+  "routed_by":"most-free","job_id":"...","file":{ ... } }
 ```
+Header respons: `X-Job-Id`, `X-Account-Label`, `X-Routed-By`.
 Gagal muat semua account (Model A): `409 { "error":{ "code":"NO_ROOM","message":"..." } }`.
 
-### `GET /files/{id}/download`
-Stream file (stream-through). Resp: binary + `Content-Disposition`.
+### `GET /files/{id}/download?inline=`
+Stream file (stream-through). Resp: binary + `Content-Disposition: attachment`.
+`?inline=1` mengubahnya jadi `inline`, sehingga browser merender isinya
+(pratinjau PDF/gambar/video) alih-alih memicu unduhan.
 
 ### `POST /files/{id}/move`
 Pindah **fisik antar account** (transfer data). Body: `{ "dest_account_id":"uuid" }`.
@@ -106,6 +145,18 @@ Resp: `204`.
 
 ---
 
+## Settings
+
+### `GET /settings`
+Konfigurasi runtime backend (read-only). Dibaca dari environment saat proses start;
+mengubahnya berarti menyunting `.env` lalu me-restart layanan.
+```json
+{ "routing_strategy":"most-free","remote_base_dir":"PolyCloud",
+  "storage_model":"A","chunking":false,"sync_recurse":true,"multi_user":false }
+```
+
+---
+
 ## Quota
 
 ### `GET /quota`
@@ -142,3 +193,6 @@ data: { "job":"...", "file_id":"uuid", "account_label":"GDrive-2" }
 | `RATE_LIMITED` | 429 | provider rate-limit |
 | `PATH_EXISTS` | 409 | folder/file dgn path sama sudah ada |
 | `FOLDER_NOT_EMPTY` | 409 | hapus folder berisi tanpa `recursive=true` |
+| `INVALID_ARGUMENT` | 400 | body/param tak valid, provider belum dikonfigurasi |
+| `UNSUPPORTED` | 501 | operasi belum didukung impl aktif (mis. file chunked) |
+| `INTERNAL` | 500 | kesalahan tak terduga |
