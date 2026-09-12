@@ -73,6 +73,12 @@ Skema DB dijalankan otomatis oleh image Postgres dari
 `apps/backend/migrations/` saat volume data masih kosong. Mengubah skema setelah
 volume terbentuk butuh `docker compose down -v` (data hilang) atau migrasi manual.
 
+## Landing page
+
+Halaman publik ada di [`apps/landing`](apps/landing) - Nuxt statis yang
+di-deploy ke Vercel, terpisah dari unit self-hosted. Halaman itu tak memanggil
+API backend sama sekali.
+
 ## Dokumentasi
 
 Desain lengkap ada di [`docs/`](docs/) — arsitektur, data model, API spec,

@@ -25,13 +25,19 @@ storage-platform/
 │   │   ├── migrations/           # SQL migrations
 │   │   ├── go.mod
 │   │   └── Dockerfile
-│   └── frontend/                 # Nuxt 4
-│       ├── app/                  # pages, layouts, components
-│       ├── composables/          # useAccounts, useFiles, useUpload
-│       ├── stores/               # Pinia state
+│   ├── frontend/                 # Nuxt 4 - aplikasi (self-hosted)
+│   │   ├── app/                  # pages, layouts, components
+│   │   ├── composables/          # useApi, useFormatters
+│   │   ├── stores/               # Pinia state
+│   │   ├── nuxt.config.ts
+│   │   ├── package.json
+│   │   └── Dockerfile
+│   └── landing/                  # Nuxt 4 statis - halaman publik (Vercel)
+│       ├── app/                  # satu halaman + komponen bagian
+│       ├── public/shots/         # tangkapan layar produk
 │       ├── nuxt.config.ts
-│       ├── package.json
-│       └── Dockerfile
+│       ├── vercel.json
+│       └── package.json
 ├── packages/
 │   └── shared-types/             # kontrak tipe (sumber kebenaran API)
 │       ├── types.ts              # TS untuk frontend
@@ -48,6 +54,7 @@ storage-platform/
 |------|----------------|-------------|
 | `apps/backend` | logika bisnis, DB, engine, API | logika presentasi |
 | `apps/frontend` | UI, state, panggil API | akses DB / provider langsung |
+| `apps/landing` | halaman publik, konten statis | panggil API backend, simpan rahasia |
 | `packages/shared-types` | definisi kontrak | logika runtime |
 | `docs` | desain & keputusan | kode |
 
@@ -62,6 +69,9 @@ Kontrak API adalah sumber kebenaran tunggal. Alur menjaga sinkron:
 - **Task runner:** `Makefile` di root (`make dev`, `make migrate`, `make build`).
 - **Backend:** Go modules; migrasi SQL via tool ringan (mis. `golang-migrate`).
 - **Frontend:** pnpm/npm; Nuxt 4.
+- **Landing:** Nuxt 4 mode statis (`nuxt generate`); di-deploy terpisah ke Vercel
+  dengan Root Directory `apps/landing`. Tak ikut di `docker-compose.yml` karena
+  bukan bagian unit self-hosted.
 - **Lint/format:** `gofmt`+`golangci-lint` (Go), ESLint/Prettier (Nuxt).
 - **Dev DB:** Postgres via Docker (atau Supabase remote).
 
