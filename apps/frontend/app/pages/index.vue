@@ -24,6 +24,16 @@ const loadFailed = computed(() =>
 // kuota yang terakhir disinkronkan — keputusan sebenarnya tetap di backend saat
 // unggahan berjalan (ADR-008).
 const routingTarget = computed(() => accountsStore.recommendedAccount)
+
+// Menjatuhkan file di mana pun pada halaman ini akan mengunggahnya ke folder
+// yang sedang dibuka — tak perlu membuka modal unggah lebih dulu.
+const { uploadAndReport } = useUploadReporter()
+const { isDraggingFiles } = useDropZone(files => {
+  // Modal dibuka supaya antrean dan progresnya terlihat; unggahannya sendiri
+  // berjalan lepas dari modal itu.
+  filesStore.isUploadModalOpen = true
+  void uploadAndReport(files)
+})
 </script>
 
 <template>
@@ -214,5 +224,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
         </div>
       </template>
     </UDashboardPanel>
+
+    <DropOverlay :show="isDraggingFiles" :destination="filesStore.currentPath" />
   </div>
 </template>

@@ -422,6 +422,29 @@ export const useFilesStore = defineStore('files', () => {
     return res
   }
 
+  /**
+   * Kembalikan sekumpulan file ke folder asalnya masing-masing.
+   *
+   * Dipakai untuk membatalkan pemindahan. Tak bisa memakai
+   * `moveSelectedToFolder`, karena pada pindah massal tiap file bisa berasal
+   * dari folder yang berbeda — satu tujuan tunggal justru akan menumpuk semuanya
+   * di satu tempat, bukan mengembalikannya.
+   */
+  async function restoreFilesToFolders(entries: { fileId: string; folderId: string | null }[]) {
+    const failed: { id: string; error: unknown }[] = []
+    let ok = 0
+    for (const entry of entries) {
+      try {
+        await api.patch<FileEntry>(`/files/${entry.fileId}`, { folder_id: entry.folderId })
+        ok++
+      } catch (error) {
+        failed.push({ id: entry.fileId, error })
+      }
+    }
+    await refreshList()
+    return { ok, failed }
+  }
+
   /** Migrasikan seluruh file terpilih ke akun lain — transfer data nyata. */
   async function migrateSelected(destAccountId: string) {
     const ids = [...selectedFileIds.value]
@@ -610,6 +633,7 @@ export const useFilesStore = defineStore('files', () => {
     clearSelection,
     deleteSelected,
     moveSelectedToFolder,
+    restoreFilesToFolders,
     migrateSelected,
     runSearch,
     fetchAllFiles,

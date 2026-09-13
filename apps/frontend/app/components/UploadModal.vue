@@ -2,7 +2,7 @@
 const filesStore = useFilesStore()
 const accountsStore = useAccountsStore()
 const { formatBytes } = useFormatters()
-const toast = useToast()
+const { uploadAndReport } = useUploadReporter()
 
 const isDragging = ref(false)
 const selectedFolderId = ref<string>(filesStore.currentFolderId || '__root__')
@@ -125,26 +125,10 @@ function handleFileInput(e: Event) {
 }
 
 async function processFiles(fileList: File[]) {
-  if (fileList.length === 0) return
+  // Modal punya pemilih folder sendiri, jadi tujuannya dikirim eksplisit —
+  // beda dari drop di halaman, yang selalu memakai folder yang sedang dibuka.
   const folderId = selectedFolderId.value === '__root__' ? null : selectedFolderId.value
-
-  // Backend yang memilih akun tujuan; UI tak mengirim preferensi akun.
-  const results = await filesStore.uploadFiles(fileList, folderId)
-
-  const failed = results.filter(r => r instanceof Error)
-  if (failed.length > 0) {
-    toast.add({
-      title: `${failed.length} file${failed.length > 1 ? 's' : ''} failed to upload`,
-      description: friendlyMessage(failed[0]),
-      color: 'error'
-    })
-  } else {
-    toast.add({
-      title: fileList.length > 1 ? `${fileList.length} files uploaded` : 'File uploaded',
-      description: 'The router picked the destination account with the most free space.',
-      color: 'success'
-    })
-  }
+  await uploadAndReport(fileList, folderId)
 }
 
 function triggerFileInput() {

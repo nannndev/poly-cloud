@@ -31,7 +31,9 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp>
+  <!-- Toast di atas-tengah: sudut kanan-bawah bertabrakan dengan modal progres
+       unggah, yang justru paling sering terbuka saat toast terbit. -->
+  <UApp :toaster="{ position: 'top-center', duration: 4000 }">
     <NuxtLoadingIndicator color="var(--ui-primary)" />
 
     <NuxtLayout>

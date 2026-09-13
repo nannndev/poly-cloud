@@ -63,6 +63,10 @@ const actionError = ref('')
 // Jangkar shift-click: file terakhir yang dipilih lewat klik biasa.
 const lastClickedId = ref<string | null>(null)
 
+// Seret-lepas di dalam explorer: pindahkan file/folder dengan menjatuhkannya
+// ke folder lain, atau ke breadcrumb untuk naik ke induk.
+const dnd = useExplorerDnd()
+
 const categories = [
   { id: 'all', label: 'All Items', icon: 'i-lucide-layers' },
   { id: 'docs', label: 'Documents', icon: 'i-lucide-file-text' },
@@ -549,15 +553,22 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
         <div class="flex items-center gap-1 font-mono">
           <template v-for="(crumb, idx) in filesStore.breadcrumbs" :key="crumb.path">
+            <!-- Breadcrumb juga menerima jatuhan: satu-satunya cara memindahkan
+                 item ke folder INDUK tanpa menutup folder yang sedang dibuka. -->
             <button
               type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg transition-colors cursor-pointer"
+              class="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 transition-colors"
               :class="[
-                idx === filesStore.breadcrumbs.length - 1
-                  ? 'bg-primary-500/15 text-primary-300 font-semibold border border-primary-500/25'
-                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
+                dnd.isDropTarget(crumb.id)
+                  ? 'bg-primary-500/25 text-primary-200 font-semibold ring-1 ring-primary-400/60'
+                  : idx === filesStore.breadcrumbs.length - 1
+                    ? 'bg-primary-500/15 text-primary-300 font-semibold border border-primary-500/25'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
               ]"
               @click="filesStore.navigateToFolder(crumb.id)"
+              @dragover="dnd.onDragOverFolder($event, crumb.id)"
+              @dragleave="dnd.onDragLeaveFolder(crumb.id)"
+              @drop="dnd.dropInto($event, crumb.id)"
             >
               <UIcon
                 :name="idx === 0 ? 'i-lucide-hard-drive' : 'i-lucide-folder'"
@@ -791,8 +802,17 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             <tr
               v-for="folder in filesStore.currentFolders"
               :key="folder.id"
-              class="hover:bg-[#1a1f2d] transition-colors group cursor-pointer"
+              draggable="true"
+              class="group cursor-pointer transition-colors"
+              :class="dnd.isDropTarget(folder.id)
+                ? 'bg-primary-500/15 ring-1 ring-inset ring-primary-400/50'
+                : 'hover:bg-[#1a1f2d]'"
               @click="filesStore.navigateToFolder(folder.id)"
+              @dragstart="dnd.startFolderDrag($event, folder)"
+              @dragend="dnd.endDrag()"
+              @dragover="dnd.onDragOverFolder($event, folder.id)"
+              @dragleave="dnd.onDragLeaveFolder(folder.id)"
+              @drop="dnd.dropInto($event, folder.id)"
             >
               <!-- Folder tak ikut pilihan massal: aksinya beda dari file. -->
               <td class="py-3 pl-5 pr-1" />
@@ -872,9 +892,12 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             <tr
               v-for="file in filesStore.filteredFiles"
               :key="file.id"
-              class="transition-colors group cursor-pointer"
+              draggable="true"
+              class="group cursor-pointer transition-colors"
               :class="filesStore.isSelected(file.id) ? 'bg-primary-500/[0.07]' : 'hover:bg-[#1a1f2d]'"
               @click="handleRowClick(file, $event)"
+              @dragstart="dnd.startFileDrag($event, file)"
+              @dragend="dnd.endDrag()"
             >
               <td class="py-3 pl-5 pr-1" @click.stop>
                 <UCheckbox
@@ -1044,8 +1067,17 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <div
             v-for="folder in filesStore.currentFolders"
             :key="folder.id"
-            class="flex items-center justify-between p-3.5 rounded-2xl border border-white/[0.08] bg-[#141925] hover:border-amber-500/40 hover:bg-[#1b2130] transition-all group cursor-pointer shadow-xs"
+            draggable="true"
+            class="group flex cursor-pointer items-center justify-between rounded-2xl border p-3.5 shadow-xs transition-all"
+            :class="dnd.isDropTarget(folder.id)
+              ? 'border-primary-400/60 bg-primary-500/15 ring-1 ring-primary-400/40'
+              : 'border-white/[0.08] bg-[#141925] hover:border-amber-500/40 hover:bg-[#1b2130]'"
             @click="filesStore.navigateToFolder(folder.id)"
+            @dragstart="dnd.startFolderDrag($event, folder)"
+            @dragend="dnd.endDrag()"
+            @dragover="dnd.onDragOverFolder($event, folder.id)"
+            @dragleave="dnd.onDragLeaveFolder(folder.id)"
+            @drop="dnd.dropInto($event, folder.id)"
           >
             <div class="flex items-center gap-3 min-w-0">
               <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform shadow-xs">
@@ -1091,11 +1123,14 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <div
             v-for="file in filesStore.filteredFiles"
             :key="file.id"
-            class="flex flex-col justify-between p-4 rounded-3xl border transition-all group cursor-pointer shadow-xs"
+            draggable="true"
+            class="group flex cursor-pointer flex-col justify-between rounded-3xl border p-4 shadow-xs transition-all"
             :class="filesStore.isSelected(file.id)
               ? 'border-primary-500/50 bg-primary-500/[0.07]'
               : 'border-white/[0.08] bg-[#141925] hover:border-primary-500/30 hover:bg-[#1a1f2d]'"
             @click="handleRowClick(file, $event)"
+            @dragstart="dnd.startFileDrag($event, file)"
+            @dragend="dnd.endDrag()"
           >
             <div class="space-y-3">
               <div class="flex items-start justify-between">

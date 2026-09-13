@@ -15,20 +15,20 @@ storage-platform/
 │   ├── backend/                  # Go API + rclone engine adapter
 │   │   ├── cmd/api/main.go       # entrypoint
 │   │   ├── internal/
-│   │   │   ├── http/             # handlers, router, middleware, SSE
+│   │   │   ├── httpapi/          # handlers, router, middleware, SSE
 │   │   │   ├── storage/          # StorageService + WholeFileStore (+ ChunkedStore nanti)
-│   │   │   ├── engine/           # rclone adapter (CLI/lib)
+│   │   │   ├── engine/           # rclone adapter (daemon RC)
 │   │   │   ├── routing/          # smart routing
 │   │   │   ├── index/            # repo metadata (DB)
+│   │   │   ├── domain/           # tipe inti, dibagi seluruh lapisan
 │   │   │   ├── auth/             # OAuth flow, token crypto, lifecycle
 │   │   │   └── config/           # env loading
 │   │   ├── migrations/           # SQL migrations
 │   │   ├── go.mod
 │   │   └── Dockerfile
 │   ├── frontend/                 # Nuxt 4 - aplikasi (self-hosted)
-│   │   ├── app/                  # pages, layouts, components
-│   │   ├── composables/          # useApi, useFormatters
-│   │   ├── stores/               # Pinia state
+│   │   ├── app/                  # pages, layouts, components,
+│   │   │                         #   composables/, stores/ (Pinia)
 │   │   ├── nuxt.config.ts
 │   │   ├── package.json
 │   │   └── Dockerfile
@@ -45,7 +45,7 @@ storage-platform/
 ├── docs/                         # dokumen ini
 ├── docker-compose.yml            # backend + frontend + postgres
 ├── .env.example
-├── Makefile                      # task umum (dev, build, migrate)
+├── Makefile                      # task umum (dev, build, test, fmt)
 └── README.md
 ```
 
@@ -66,14 +66,20 @@ Kontrak API adalah sumber kebenaran tunggal. Alur menjaga sinkron:
    (Opsional lanjut: generate `types.ts` otomatis dari OpenAPI/Go — lihat ADR jika diadopsi.)
 
 ## 5. Tooling
-- **Task runner:** `Makefile` di root (`make dev`, `make migrate`, `make build`).
-- **Backend:** Go modules; migrasi SQL via tool ringan (mis. `golang-migrate`).
-- **Frontend:** pnpm/npm; Nuxt 4.
+- **Task runner:** `Makefile` di root — `make dev`, `build`, `down`, `logs`,
+  `test`, `fmt`. `test` dan `fmt` berjalan di dalam container `golang:1.25-alpine`,
+  jadi kontributor tak perlu memasang Go untuk menjalankan test backend.
+- **Backend:** Go modules. Migrasi berupa SQL polos di `apps/backend/migrations/`,
+  dijalankan otomatis oleh image Postgres lewat `/docker-entrypoint-initdb.d`
+  saat volume data masih kosong — tak ada tool migrasi terpisah. Mengubah skema
+  setelah volume terbentuk butuh `docker compose down -v` atau `psql` manual.
+- **Frontend:** npm; Nuxt 4.
 - **Landing:** Nuxt 4 mode statis (`nuxt generate`); di-deploy terpisah ke Vercel
   dengan Root Directory `apps/landing`. Tak ikut di `docker-compose.yml` karena
   bukan bagian unit self-hosted.
-- **Lint/format:** `gofmt`+`golangci-lint` (Go), ESLint/Prettier (Nuxt).
-- **Dev DB:** Postgres via Docker (atau Supabase remote).
+- **Lint/format:** `gofmt` + `go vet` (Go, lewat `make test`), `vue-tsc`
+  untuk typecheck frontend. `golangci-lint` dan ESLint belum dikonfigurasi.
+- **Dev DB:** Postgres 16 via Docker Compose.
 
 ## 6. Konvensi Cabang & Commit
 - Trunk-based sederhana: `main` + short-lived feature branches.
