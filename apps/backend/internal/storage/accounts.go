@@ -238,9 +238,17 @@ func (s *AccountService) Sync(ctx context.Context, userID, accountID string) (Sy
 			m := e.ModTime
 			modPtr = &m
 		}
-		providerRef := e.ID
+		// Selalu path, tak pernah file-id provider: engine menjangkau objek lewat
+		// rclone serve yang hanya mengerti path. Menyimpan e.ID di sini membuat
+		// tiap download/hapus/pindah atas baris hasil sync menunjuk objek yang
+		// tak ada.
+		//
+		// e.Path sudah memuat BaseDir — rclone melaporkannya relatif terhadap
+		// akar remote, bukan terhadap direktori yang diminta — jadi menjahitkan
+		// BaseDir sekali lagi menghasilkan "PolyCloud/PolyCloud/...".
+		providerRef := e.Path
 		if providerRef == "" {
-			providerRef = engine.Join(s.deps.BaseDir, e.Path)
+			providerRef = engine.Join(s.deps.BaseDir, name)
 		}
 
 		if _, err := s.deps.Files.Insert(ctx, index.NewFile{

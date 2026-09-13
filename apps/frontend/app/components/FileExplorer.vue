@@ -533,7 +533,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 <template>
   <div class="space-y-4">
     <!-- VFS Breadcrumbs & Location Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[#0c0c0e] border border-white/[0.08] shadow-xs">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-[#0d111a] border border-white/[0.08] shadow-xs">
       <!-- Breadcrumb Path Trail -->
       <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs">
         <!-- Up one level button (if not in root) -->
@@ -541,7 +541,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           v-if="filesStore.currentFolderId !== null"
           type="button"
           title="Go up one folder"
-          class="flex size-7 items-center justify-center rounded-lg bg-[#15151a] hover:bg-[#1a1a20] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer shrink-0 mr-1"
+          class="flex size-7 items-center justify-center rounded-lg bg-[#1b2130] hover:bg-[#1a1a20] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer shrink-0 mr-1"
           @click="filesStore.navigateUp()"
         >
           <UIcon name="i-lucide-corner-left-up" class="size-3.5" />
@@ -554,7 +554,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               class="inline-flex items-center gap-1 px-2 py-1 rounded-lg transition-colors cursor-pointer"
               :class="[
                 idx === filesStore.breadcrumbs.length - 1
-                  ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/25'
+                  ? 'bg-primary-500/15 text-primary-300 font-semibold border border-primary-500/25'
                   : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
               ]"
               @click="filesStore.navigateToFolder(crumb.id)"
@@ -562,7 +562,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               <UIcon
                 :name="idx === 0 ? 'i-lucide-hard-drive' : 'i-lucide-folder'"
                 class="size-3.5"
-                :class="idx === filesStore.breadcrumbs.length - 1 ? 'text-emerald-400' : 'text-zinc-500'"
+                :class="idx === filesStore.breadcrumbs.length - 1 ? 'text-primary-400' : 'text-zinc-500'"
               />
               <span>{{ crumb.name }}</span>
             </button>
@@ -580,10 +580,10 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#16161b] hover:bg-[#1c1c22] text-zinc-200 hover:text-white border border-white/[0.08] transition-all cursor-pointer shadow-xs"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#1c2231] hover:bg-[#262d3e] text-zinc-200 hover:text-white border border-white/[0.08] transition-all cursor-pointer shadow-xs"
           @click="openNewFolder"
         >
-          <UIcon name="i-lucide-folder-plus" class="size-3.5 text-emerald-400" />
+          <UIcon name="i-lucide-folder-plus" class="size-3.5 text-primary-400" />
           <span>New Folder</span>
         </button>
       </div>
@@ -620,7 +620,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             ...accountsStore.accounts.map(a => ({ value: a.id, label: `${a.label}` }))
           ]"
           icon="i-lucide-cloud"
-          class="min-w-44 rounded-xl bg-[#121215] border border-white/[0.08] text-zinc-200 shadow-xs"
+          class="min-w-44 rounded-xl bg-[#151a27] border border-white/[0.08] text-zinc-200 shadow-xs"
           size="md"
         />
 
@@ -633,12 +633,12 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             { value: 'size', label: 'File Size' }
           ]"
           icon="i-lucide-arrow-up-down"
-          class="w-36 rounded-xl bg-[#121215] border border-white/[0.08] text-zinc-200 shadow-xs"
+          class="w-36 rounded-xl bg-[#151a27] border border-white/[0.08] text-zinc-200 shadow-xs"
           size="md"
         />
 
         <!-- View Mode Toggle -->
-        <div class="flex items-center rounded-xl border border-white/[0.08] bg-[#121215] p-1 shadow-xs">
+        <div class="flex items-center rounded-xl border border-white/[0.08] bg-[#151a27] p-1 shadow-xs">
           <UButton
             icon="i-lucide-list"
             size="xs"
@@ -670,8 +670,8 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
         class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-150 cursor-pointer shadow-xs"
         :class="[
           filesStore.selectedCategory === cat.id
-            ? 'bg-emerald-600 text-white shadow-xs font-semibold'
-            : 'bg-[#131316] hover:bg-[#18181d] text-zinc-400 hover:text-zinc-200 border border-white/[0.06]'
+            ? 'bg-primary-600 text-white shadow-xs font-semibold'
+            : 'bg-[#171c2a] hover:bg-[#212736] text-zinc-400 hover:text-zinc-200 border border-white/[0.06]'
         ]"
         @click="filesStore.selectedCategory = cat.id"
       >
@@ -688,10 +688,10 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <!-- Bulk action bar: muncul hanya saat ada yang dipilih -->
     <div
       v-if="filesStore.selectedFileIds.length > 0"
-      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] shadow-xs"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl border border-primary-500/30 bg-primary-500/[0.06] shadow-xs"
     >
       <div class="flex items-center gap-3 text-xs">
-        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-semibold">
+        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary-500/15 text-primary-300 border border-primary-500/25 font-semibold">
           <UIcon name="i-lucide-check-square" class="size-3.5" />
           {{ filesStore.selectedFileIds.length }} selected
         </span>
@@ -749,12 +749,12 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <!-- Files View: Table Mode -->
     <div
       v-if="filesStore.viewMode === 'table'"
-      class="rounded-3xl border border-white/[0.08] bg-[#0c0c0e] overflow-hidden shadow-sm"
+      class="rounded-3xl border border-white/[0.08] bg-[#0d111a] overflow-hidden shadow-sm"
     >
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="border-b border-white/[0.06] bg-[#111114] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
+            <tr class="border-b border-white/[0.06] bg-[#141925] text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
               <th class="py-3.5 pl-5 pr-1 w-9">
                 <UCheckbox
                   :model-value="filesStore.allVisibleSelected"
@@ -767,20 +767,20 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               <th class="py-3.5 px-4">
                 <button type="button" class="inline-flex items-center gap-1.5 uppercase tracking-wider hover:text-white transition-colors cursor-pointer" @click="sortByColumn('name')">
                   Name &amp; Virtual Path
-                  <UIcon :name="sortIcon('name')" class="size-3" :class="filesStore.sortBy === 'name' ? 'text-emerald-400' : 'text-zinc-600'" />
+                  <UIcon :name="sortIcon('name')" class="size-3" :class="filesStore.sortBy === 'name' ? 'text-primary-400' : 'text-zinc-600'" />
                 </button>
               </th>
               <th class="py-3.5 px-4">Storage Provider</th>
               <th class="py-3.5 px-4">
                 <button type="button" class="inline-flex items-center gap-1.5 uppercase tracking-wider hover:text-white transition-colors cursor-pointer" @click="sortByColumn('size')">
                   Size
-                  <UIcon :name="sortIcon('size')" class="size-3" :class="filesStore.sortBy === 'size' ? 'text-emerald-400' : 'text-zinc-600'" />
+                  <UIcon :name="sortIcon('size')" class="size-3" :class="filesStore.sortBy === 'size' ? 'text-primary-400' : 'text-zinc-600'" />
                 </button>
               </th>
               <th class="py-3.5 px-4">
                 <button type="button" class="inline-flex items-center gap-1.5 uppercase tracking-wider hover:text-white transition-colors cursor-pointer" @click="sortByColumn('modified')">
                   Last Modified
-                  <UIcon :name="sortIcon('modified')" class="size-3" :class="filesStore.sortBy === 'modified' ? 'text-emerald-400' : 'text-zinc-600'" />
+                  <UIcon :name="sortIcon('modified')" class="size-3" :class="filesStore.sortBy === 'modified' ? 'text-primary-400' : 'text-zinc-600'" />
                 </button>
               </th>
               <th class="py-3.5 px-5 text-right">Actions</th>
@@ -791,7 +791,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             <tr
               v-for="folder in filesStore.currentFolders"
               :key="folder.id"
-              class="hover:bg-[#141418] transition-colors group cursor-pointer"
+              class="hover:bg-[#1a1f2d] transition-colors group cursor-pointer"
               @click="filesStore.navigateToFolder(folder.id)"
             >
               <!-- Folder tak ikut pilihan massal: aksinya beda dari file. -->
@@ -805,7 +805,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                   </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="font-semibold text-zinc-200 truncate group-hover:text-emerald-400 transition-colors">
+                      <span class="font-semibold text-zinc-200 truncate group-hover:text-primary-400 transition-colors">
                         {{ folder.name }}
                       </span>
                       <UBadge
@@ -849,7 +849,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                       variant="ghost"
                       size="xs"
                       square
-                      class="rounded-lg hover:text-emerald-400"
+                      class="rounded-lg hover:text-primary-400"
                       @click="filesStore.navigateToFolder(folder.id)"
                     />
                   </UTooltip>
@@ -873,7 +873,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               v-for="file in filesStore.filteredFiles"
               :key="file.id"
               class="transition-colors group cursor-pointer"
-              :class="filesStore.isSelected(file.id) ? 'bg-emerald-500/[0.07]' : 'hover:bg-[#141418]'"
+              :class="filesStore.isSelected(file.id) ? 'bg-primary-500/[0.07]' : 'hover:bg-[#1a1f2d]'"
               @click="handleRowClick(file, $event)"
             >
               <td class="py-3 pl-5 pr-1" @click.stop>
@@ -887,7 +887,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               <!-- Name & Icon -->
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3.5 min-w-[260px]">
-                  <div class="p-2 rounded-xl bg-[#15151a] shrink-0 border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
+                  <div class="p-2 rounded-xl bg-[#1b2130] shrink-0 border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
                     <UIcon
                       :name="getFileIcon(file.mime, file.name).icon"
                       class="size-5"
@@ -896,7 +896,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                   </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="font-semibold text-zinc-200 truncate max-w-xs md:max-w-md group-hover:text-emerald-400 transition-colors">
+                      <span class="font-semibold text-zinc-200 truncate max-w-xs md:max-w-md group-hover:text-primary-400 transition-colors">
                         {{ file.name }}
                       </span>
                       <UBadge
@@ -905,7 +905,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                         color="primary"
                         variant="subtle"
                         size="xs"
-                        class="text-[9px] px-1.5 py-0 rounded-md font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        class="text-[9px] px-1.5 py-0 rounded-md font-medium bg-primary-500/10 text-primary-400 border border-primary-500/20"
                       />
                     </div>
                     <span class="text-[11px] text-zinc-500 font-mono truncate block mt-0.5">
@@ -946,7 +946,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                       variant="ghost"
                       size="xs"
                       square
-                      class="rounded-lg hover:text-emerald-400"
+                      class="rounded-lg hover:text-primary-400"
                       @click="handleDownload(file)"
                     />
                   </UTooltip>
@@ -1009,7 +1009,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                       icon="i-lucide-upload-cloud"
                       color="primary"
                       size="xs"
-                      class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white"
                       @click="filesStore.isUploadModalOpen = true"
                     />
                     <UButton
@@ -1044,7 +1044,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <div
             v-for="folder in filesStore.currentFolders"
             :key="folder.id"
-            class="flex items-center justify-between p-3.5 rounded-2xl border border-white/[0.08] bg-[#111114] hover:border-amber-500/40 hover:bg-[#15151a] transition-all group cursor-pointer shadow-xs"
+            class="flex items-center justify-between p-3.5 rounded-2xl border border-white/[0.08] bg-[#141925] hover:border-amber-500/40 hover:bg-[#1b2130] transition-all group cursor-pointer shadow-xs"
             @click="filesStore.navigateToFolder(folder.id)"
           >
             <div class="flex items-center gap-3 min-w-0">
@@ -1080,7 +1080,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <!-- Grid Files Section -->
       <div class="space-y-2.5">
         <h3 v-if="filesStore.currentFolders.length > 0" class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-          <UIcon name="i-lucide-files" class="size-3.5 text-emerald-400" />
+          <UIcon name="i-lucide-files" class="size-3.5 text-primary-400" />
           Files ({{ filesStore.totalFiles }})
         </h3>
 
@@ -1093,8 +1093,8 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             :key="file.id"
             class="flex flex-col justify-between p-4 rounded-3xl border transition-all group cursor-pointer shadow-xs"
             :class="filesStore.isSelected(file.id)
-              ? 'border-emerald-500/50 bg-emerald-500/[0.07]'
-              : 'border-white/[0.08] bg-[#111114] hover:border-emerald-500/30 hover:bg-[#141418]'"
+              ? 'border-primary-500/50 bg-primary-500/[0.07]'
+              : 'border-white/[0.08] bg-[#141925] hover:border-primary-500/30 hover:bg-[#1a1f2d]'"
             @click="handleRowClick(file, $event)"
           >
             <div class="space-y-3">
@@ -1109,7 +1109,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                       @click="handleCheckboxClick(file, $event)"
                     />
                   </span>
-                  <div class="p-2.5 rounded-2xl bg-[#16161b] border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
+                  <div class="p-2.5 rounded-2xl bg-[#1c2231] border border-white/[0.06] group-hover:scale-105 transition-transform shadow-xs">
                     <UIcon
                       :name="getFileIcon(file.mime, file.name).icon"
                       class="size-6"
@@ -1133,7 +1133,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
               </div>
 
               <div>
-                <h4 class="font-semibold text-xs text-zinc-200 line-clamp-2 group-hover:text-emerald-400 transition-colors" :title="file.name">
+                <h4 class="font-semibold text-xs text-zinc-200 line-clamp-2 group-hover:text-primary-400 transition-colors" :title="file.name">
                   {{ file.name }}
                 </h4>
                 <div class="flex items-center justify-between text-[11px] font-mono text-zinc-500 mt-1.5">
@@ -1155,7 +1155,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                 color="primary"
                 variant="subtle"
                 size="xs"
-                class="text-[9px] px-1 py-0 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                class="text-[9px] px-1 py-0 rounded-md bg-primary-500/10 text-primary-400 border border-primary-500/20"
               />
             </div>
           </div>
@@ -1203,7 +1203,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                 icon="i-lucide-upload-cloud"
                 color="primary"
                 size="xs"
-                class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white"
                 @click="filesStore.isUploadModalOpen = true"
               />
               <UButton
@@ -1220,7 +1220,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
         </template>
       </div>
 
-      <div v-if="filesStore.totalFiles > 0" class="rounded-2xl border border-white/[0.08] bg-[#0c0c0e] overflow-hidden">
+      <div v-if="filesStore.totalFiles > 0" class="rounded-2xl border border-white/[0.08] bg-[#0d111a] overflow-hidden">
         <ExplorerPager />
       </div>
     </div>
@@ -1240,9 +1240,9 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isMoveModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
@@ -1254,10 +1254,10 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
       <template #body>
         <div v-if="selectedFile" class="space-y-4">
-          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs space-y-1">
+          <div class="p-3.5 rounded-2xl bg-[#151a27] border border-white/[0.07] text-xs space-y-1">
             <span class="text-zinc-400 block">File:</span>
             <span class="font-bold text-white block truncate">{{ selectedFile.name }} ({{ formatBytes(selectedFile.size_bytes) }})</span>
-            <span class="text-zinc-400 block mt-1">Current provider: <strong class="text-emerald-400">{{ selectedFile.account_label }}</strong></span>
+            <span class="text-zinc-400 block mt-1">Current provider: <strong class="text-primary-400">{{ selectedFile.account_label }}</strong></span>
           </div>
 
           <div>
@@ -1267,7 +1267,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
             <USelect
               v-model="targetMoveAccount"
               :items="moveOptions"
-              class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
+              class="w-full rounded-xl bg-[#1c2231] border border-white/[0.08] text-white"
               icon="i-lucide-cloud-upload"
               size="md"
             />
@@ -1278,7 +1278,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isMoveModalOpen = false" />
-          <UButton label="Migrate Now" icon="i-lucide-arrow-right-left" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmMove" />
+          <UButton label="Migrate Now" icon="i-lucide-arrow-right-left" color="primary" class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white" @click="confirmMove" />
         </div>
       </template>
     </UModal>
@@ -1287,19 +1287,19 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isNewFolderModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-folder-plus" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-folder-plus" class="size-5 text-primary-400" />
             Create Virtual Folder
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">
-            Creating under: <code class="text-emerald-400 font-mono">{{ filesStore.currentPath }}</code>
+            Creating under: <code class="text-primary-400 font-mono">{{ filesStore.currentPath }}</code>
           </p>
         </div>
       </template>
@@ -1321,7 +1321,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           </div>
 
           <div class="p-3 rounded-xl bg-zinc-900/80 border border-white/[0.06] text-[11px] text-zinc-400">
-            <span class="text-emerald-400 font-semibold">VFS Architecture Note:</span> Folders exist purely in database metadata. No empty folder overhead in your cloud accounts.
+            <span class="text-primary-400 font-semibold">VFS Architecture Note:</span> Folders exist purely in database metadata. No empty folder overhead in your cloud accounts.
           </div>
         </div>
       </template>
@@ -1329,7 +1329,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isNewFolderModalOpen = false" />
-          <UButton :loading="isBusy" label="Create Folder" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" @click="confirmCreateFolder" />
+          <UButton :loading="isBusy" label="Create Folder" color="primary" class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white" @click="confirmCreateFolder" />
         </div>
       </template>
     </UModal>
@@ -1338,15 +1338,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isRenameFolderModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-edit-2" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-edit-2" class="size-5 text-primary-400" />
             Rename Virtual Folder
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">Renaming cascades instantly to all child virtual paths.</p>
@@ -1372,7 +1372,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isRenameFolderModalOpen = false" />
-          <UButton label="Save Changes" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmRenameFolder" />
+          <UButton label="Save Changes" color="primary" class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white" :loading="isBusy" @click="confirmRenameFolder" />
         </div>
       </template>
     </UModal>
@@ -1381,9 +1381,9 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isDeleteFolderModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
@@ -1398,7 +1398,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
       <template #body>
         <div v-if="folderToDelete" class="space-y-3">
-          <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1.5">
+          <div class="p-3.5 rounded-2xl bg-[#1d1620] border border-rose-500/20 text-xs space-y-1.5">
             <div class="flex items-center gap-2 text-rose-300 font-semibold">
               <UIcon name="i-lucide-alert-triangle" class="size-4 shrink-0" />
               <span>Permanent deletion</span>
@@ -1440,15 +1440,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isMoveToFolderModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-folder-input" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-folder-input" class="size-5 text-primary-400" />
             Move File to Virtual Folder
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">Instant database update without moving physical provider blocks.</p>
@@ -1457,17 +1457,17 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
       <template #body>
         <div v-if="fileToMoveVfs" class="space-y-4">
-          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs space-y-1">
+          <div class="p-3.5 rounded-2xl bg-[#151a27] border border-white/[0.07] text-xs space-y-1">
             <span class="text-zinc-400 block">File:</span>
             <span class="font-bold text-white block truncate">{{ fileToMoveVfs.name }}</span>
-            <span class="text-zinc-400 block mt-1">Current Virtual Path: <strong class="text-emerald-400 font-mono">{{ fileToMoveVfs.virtual_path }}</strong></span>
+            <span class="text-zinc-400 block mt-1">Current Virtual Path: <strong class="text-primary-400 font-mono">{{ fileToMoveVfs.virtual_path }}</strong></span>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-zinc-300 mb-1.5">
               Select Destination Virtual Folder
             </label>
-            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#121215] p-1.5">
+            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#151a27] p-1.5">
               <button
                 v-for="item in filesStore.allFoldersHierarchical"
                 :key="item.path"
@@ -1475,7 +1475,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                 class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left"
                 :class="[
                   selectedTargetVfsFolderId === item.id
-                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/25'
+                    ? 'bg-primary-500/15 text-primary-300 font-semibold border border-primary-500/25'
                     : 'text-zinc-300 hover:bg-white/[0.05]'
                 ]"
                 :style="{ paddingLeft: `${item.depth * 14 + 12}px` }"
@@ -1485,7 +1485,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                   <UIcon :name="item.id === null ? 'i-lucide-hard-drive' : 'i-lucide-folder'" class="size-3.5 text-zinc-400" />
                   <span class="truncate">{{ item.name }}</span>
                 </span>
-                <UIcon v-if="selectedTargetVfsFolderId === item.id" name="i-lucide-check" class="size-3.5 text-emerald-400 shrink-0" />
+                <UIcon v-if="selectedTargetVfsFolderId === item.id" name="i-lucide-check" class="size-3.5 text-primary-400 shrink-0" />
               </button>
             </div>
           </div>
@@ -1495,7 +1495,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" @click="isMoveToFolderModalOpen = false" />
-          <UButton label="Move to Folder" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmMoveToFolder" />
+          <UButton label="Move to Folder" color="primary" class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white" :loading="isBusy" @click="confirmMoveToFolder" />
         </div>
       </template>
     </UModal>
@@ -1504,15 +1504,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isRenameFileModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-edit-3" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-edit-3" class="size-5 text-primary-400" />
             Rename File
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">Updates file name and virtual path in the database index.</p>
@@ -1539,7 +1539,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isRenameFileModalOpen = false" />
-          <UButton label="Save Name" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmRenameFile" />
+          <UButton label="Save Name" color="primary" class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white" :loading="isBusy" @click="confirmRenameFile" />
         </div>
       </template>
     </UModal>
@@ -1548,9 +1548,9 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isDeleteFileModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
@@ -1565,7 +1565,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
       <template #body>
         <div v-if="fileToDelete" class="space-y-3">
-          <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1">
+          <div class="p-3.5 rounded-2xl bg-[#1d1620] border border-rose-500/20 text-xs space-y-1">
             <span class="font-bold text-white block truncate">{{ fileToDelete.name }}</span>
             <span class="text-zinc-400 block">
               Stored on <strong class="text-zinc-300">{{ fileToDelete.account_label }}</strong> —
@@ -1588,15 +1588,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isMoveFolderModalOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-folder-input" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-folder-input" class="size-5 text-primary-400" />
             Move Virtual Folder
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">Paths of every item inside are recalculated.</p>
@@ -1605,17 +1605,17 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 
       <template #body>
         <div v-if="folderToMove" class="space-y-4">
-          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] text-xs space-y-1">
+          <div class="p-3.5 rounded-2xl bg-[#151a27] border border-white/[0.07] text-xs space-y-1">
             <span class="text-zinc-400 block">Folder:</span>
             <span class="font-bold text-white block truncate">{{ folderToMove.name }}</span>
             <span class="text-zinc-400 block mt-1">
-              Current path: <strong class="text-emerald-400 font-mono">{{ folderToMove.path }}</strong>
+              Current path: <strong class="text-primary-400 font-mono">{{ folderToMove.path }}</strong>
             </span>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-zinc-300 mb-1.5">Select New Parent Folder</label>
-            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#121215] p-1.5">
+            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#151a27] p-1.5">
               <button
                 v-for="item in moveFolderOptions"
                 :key="item.path"
@@ -1623,7 +1623,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                 class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left"
                 :class="[
                   targetParentFolderId === item.id
-                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/25'
+                    ? 'bg-primary-500/15 text-primary-300 font-semibold border border-primary-500/25'
                     : 'text-zinc-300 hover:bg-white/[0.05]'
                 ]"
                 :style="{ paddingLeft: `${item.depth * 14 + 12}px` }"
@@ -1633,7 +1633,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                   <UIcon :name="item.id === null ? 'i-lucide-hard-drive' : 'i-lucide-folder'" class="size-3.5 text-zinc-400" />
                   <span class="truncate">{{ item.name }}</span>
                 </span>
-                <UIcon v-if="targetParentFolderId === item.id" name="i-lucide-check" class="size-3.5 text-emerald-400 shrink-0" />
+                <UIcon v-if="targetParentFolderId === item.id" name="i-lucide-check" class="size-3.5 text-primary-400 shrink-0" />
               </button>
             </div>
             <p v-if="moveFolderOptions.length === 0" class="text-[11px] text-zinc-500 mt-2">
@@ -1651,7 +1651,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <UButton
             label="Move Folder"
             color="primary"
-            class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+            class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white"
             :loading="isBusy"
             :disabled="moveFolderOptions.length === 0"
             @click="confirmMoveFolder"
@@ -1664,15 +1664,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isBulkMoveOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-folder-input" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-folder-input" class="size-5 text-primary-400" />
             Move {{ filesStore.selectedFileIds.length }} Files
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">Database-only change; nothing moves at the provider.</p>
@@ -1682,7 +1682,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #body>
         <div>
           <label class="block text-xs font-bold text-zinc-300 mb-1.5">Select Destination Virtual Folder</label>
-            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#121215] p-1.5">
+            <div class="max-h-60 overflow-y-auto space-y-1 rounded-2xl border border-white/[0.08] bg-[#151a27] p-1.5">
               <button
                 v-for="item in filesStore.allFoldersHierarchical"
                 :key="item.path"
@@ -1690,7 +1690,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                 class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left"
                 :class="[
                   bulkTargetFolderId === item.id
-                    ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/25'
+                    ? 'bg-primary-500/15 text-primary-300 font-semibold border border-primary-500/25'
                     : 'text-zinc-300 hover:bg-white/[0.05]'
                 ]"
                 :style="{ paddingLeft: `${item.depth * 14 + 12}px` }"
@@ -1700,7 +1700,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
                   <UIcon :name="item.id === null ? 'i-lucide-hard-drive' : 'i-lucide-folder'" class="size-3.5 text-zinc-400" />
                   <span class="truncate">{{ item.name }}</span>
                 </span>
-                <UIcon v-if="bulkTargetFolderId === item.id" name="i-lucide-check" class="size-3.5 text-emerald-400 shrink-0" />
+                <UIcon v-if="bulkTargetFolderId === item.id" name="i-lucide-check" class="size-3.5 text-primary-400 shrink-0" />
               </button>
             </div>
         </div>
@@ -1709,7 +1709,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <UButton label="Cancel" color="neutral" variant="ghost" class="rounded-xl" :disabled="isBusy" @click="isBulkMoveOpen = false" />
-          <UButton label="Move Files" color="primary" class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white" :loading="isBusy" @click="confirmBulkMove" />
+          <UButton label="Move Files" color="primary" class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white" :loading="isBusy" @click="confirmBulkMove" />
         </div>
       </template>
     </UModal>
@@ -1718,15 +1718,15 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isBulkMigrateOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
         <div class="px-6 pt-6 pb-2">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <UIcon name="i-lucide-arrow-right-left" class="size-5 text-emerald-400" />
+            <UIcon name="i-lucide-arrow-right-left" class="size-5 text-primary-400" />
             Migrate {{ filesStore.selectedFileIds.length }} Files
           </h3>
           <p class="text-xs text-zinc-400 mt-0.5">
@@ -1741,7 +1741,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <USelect
             v-model="bulkTargetAccountId"
             :items="bulkMigrateOptions"
-            class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
+            class="w-full rounded-xl bg-[#1c2231] border border-white/[0.08] text-white"
             icon="i-lucide-cloud-upload"
             size="md"
           />
@@ -1757,7 +1757,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
           <UButton
             label="Migrate Now"
             color="primary"
-            class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+            class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white"
             :loading="isBusy"
             :disabled="!bulkTargetAccountId"
             @click="confirmBulkMigrate"
@@ -1770,9 +1770,9 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
     <UModal
       v-model:open="isBulkDeleteOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-4',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>
@@ -1786,7 +1786,7 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
       </template>
 
       <template #body>
-        <div class="p-3.5 rounded-2xl bg-[#151214] border border-rose-500/20 text-xs space-y-1.5">
+        <div class="p-3.5 rounded-2xl bg-[#1d1620] border border-rose-500/20 text-xs space-y-1.5">
           <div class="flex items-center gap-2 text-rose-300 font-semibold">
             <UIcon name="i-lucide-alert-triangle" class="size-4 shrink-0" />
             <span>Permanent deletion</span>

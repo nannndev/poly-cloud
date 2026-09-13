@@ -92,20 +92,16 @@ func (s *WholeFileStore) Upload(ctx context.Context, userID string, folderID *st
 	}
 
 	// Ambil metadata final dari provider (ukuran & ref sebenarnya).
+	// provider_ref menyimpan PATH objek, bukan file-id provider. Engine
+	// menjangkau objek lewat rclone serve, yang hanya mengerti path — file-id
+	// Google Drive tak bisa dipakai di sana dan membuat download menjawab 404
+	// setelah header terlanjur terkirim (badan kosong, tanpa error yang terlihat).
 	objectPath := engine.Join(baseDir, objectName)
-	var (
-		providerRef string
-		realSize    = size
-	)
-	if stat, err := s.deps.Engine.Stat(ctx, picked.FsTarget(), objectPath); err == nil {
-		providerRef = stat.ID
-		if stat.Size > 0 {
-			realSize = stat.Size
-		}
+	realSize := size
+	if stat, err := s.deps.Engine.Stat(ctx, picked.FsTarget(), objectPath); err == nil && stat.Size > 0 {
+		realSize = stat.Size
 	}
-	if providerRef == "" {
-		providerRef = objectPath
-	}
+	providerRef := objectPath
 
 	mimeType := domain.MimeByName(finalName)
 	var mimePtr *string
@@ -187,8 +183,12 @@ func (s *WholeFileStore) Download(ctx context.Context, userID, fileID string) (*
 	return &Download{Name: file.Name, Mime: mimeType, SizeBytes: file.SizeBytes, Body: pr}, nil
 }
 
-// objectPath mengembalikan path objek di dalam remote. provider_ref bisa berupa
-// file-id provider (GDrive) atau path — bentuk path dipakai kalau tersedia.
+// objectPath mengembalikan path objek di dalam remote.
+//
+// Baris lama bisa memuat file-id provider alih-alih path (lihat komentar di
+// Upload). Bentuk itu tak bisa dipakai engine, jadi ref tanpa "/" diperlakukan
+// sebagai nama objek di dalam BaseDir — cara membaca yang sama seperti
+// sebelumnya, supaya index lama tetap terbaca sampai disinkronkan ulang.
 func (s *WholeFileStore) objectPath(b domain.FileBlock) string {
 	if strings.Contains(b.ProviderRef, "/") {
 		return b.ProviderRef

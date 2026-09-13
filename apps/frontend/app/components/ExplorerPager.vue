@@ -25,7 +25,7 @@ const perPage = computed({
 <template>
   <div
     v-if="filesStore.totalFiles > 0"
-    class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-t border-white/[0.06] bg-[#0e0e11]"
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-t border-white/[0.06] bg-[#111621]"
   >
     <span class="text-[11px] text-zinc-400 font-mono">
       Showing <strong class="text-zinc-200">{{ filesStore.pageStart }}–{{ filesStore.pageEnd }}</strong>
@@ -37,7 +37,7 @@ const perPage = computed({
         v-model="perPage"
         :items="PER_PAGE_OPTIONS"
         size="xs"
-        class="w-32 rounded-xl bg-[#121215] border border-white/[0.08] text-zinc-200"
+        class="w-32 rounded-xl bg-[#151a27] border border-white/[0.08] text-zinc-200"
       />
 
       <div class="flex items-center gap-1">

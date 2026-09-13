@@ -45,7 +45,7 @@ const categoryStats = computed(() => {
   return [
     { label: 'Media & 4K Video', bytes: mediaBytes, percent: Math.round((mediaBytes / total) * 100), color: 'bg-rose-500', icon: 'i-lucide-film' },
     { label: 'Databases & Archives', bytes: archivesBytes, percent: Math.round((archivesBytes / total) * 100), color: 'bg-amber-500', icon: 'i-lucide-archive' },
-    { label: 'Documents & Spreadsheets', bytes: docsBytes, percent: Math.round((docsBytes / total) * 100), color: 'bg-emerald-500', icon: 'i-lucide-file-text' },
+    { label: 'Documents & Spreadsheets', bytes: docsBytes, percent: Math.round((docsBytes / total) * 100), color: 'bg-primary-500', icon: 'i-lucide-file-text' },
     { label: 'Source Code & Configs', bytes: codeBytes, percent: Math.round((codeBytes / total) * 100), color: 'bg-sky-500', icon: 'i-lucide-code' }
   ]
 })
@@ -68,7 +68,7 @@ const categoryStats = computed(() => {
                 color="primary"
                 variant="subtle"
                 size="xs"
-                class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium"
+                class="bg-primary-500/10 text-primary-400 border border-primary-500/20 font-medium"
               />
             </div>
           </template>
@@ -102,7 +102,7 @@ const categoryStats = computed(() => {
               icon="i-lucide-plus"
               color="primary"
               size="xs"
-              class="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+              class="rounded-xl font-bold bg-primary-600 hover:bg-primary-500 text-white"
               to="/accounts"
             />
           </template>
@@ -110,7 +110,7 @@ const categoryStats = computed(() => {
 
         <div v-else class="space-y-6 p-1">
           <!-- Big Total Aggregate Banner -->
-          <div class="p-6 rounded-3xl border border-white/[0.08] bg-[#111114] shadow-xs space-y-4">
+          <div class="p-6 rounded-3xl border border-white/[0.08] bg-[#141925] shadow-xs space-y-4">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Unified Total Capacity</span>
@@ -127,11 +127,11 @@ const categoryStats = computed(() => {
               <div class="flex items-center gap-3">
                 <div class="text-right">
                   <span class="text-[11px] text-zinc-500 block">Available Free Space</span>
-                  <span class="text-lg font-bold font-mono text-emerald-400">
+                  <span class="text-lg font-bold font-mono text-primary-400">
                     {{ formatBytes(accountsStore.freeStorage) }}
                   </span>
                 </div>
-                <div class="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold font-mono text-lg">
+                <div class="p-3 rounded-2xl bg-primary-500/10 text-primary-400 border border-primary-500/20 font-bold font-mono text-lg">
                   {{ accountsStore.usagePercent }}%
                 </div>
               </div>
@@ -170,7 +170,7 @@ const categoryStats = computed(() => {
                   </div>
                 </div>
 
-                <span class="font-mono text-emerald-500 font-semibold">
+                <span class="font-mono text-primary-500 font-semibold">
                   {{ formatBytes(accountsStore.freeStorage) }} Free
                 </span>
               </div>
@@ -180,10 +180,10 @@ const categoryStats = computed(() => {
           <!-- Distribution Breakdown Grid -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <!-- Breakdown by Cloud Provider -->
-            <div class="p-5 rounded-2xl border border-white/[0.08] bg-[#111114] shadow-xs space-y-4">
+            <div class="p-5 rounded-2xl border border-white/[0.08] bg-[#141925] shadow-xs space-y-4">
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-sm text-zinc-100 flex items-center gap-2">
-                  <UIcon name="i-lucide-cloud" class="size-4 text-emerald-400" />
+                  <UIcon name="i-lucide-cloud" class="size-4 text-primary-400" />
                   Allocation per Cloud Provider
                 </h3>
                 <span class="text-xs text-zinc-500">{{ accountsStore.accounts.length }} Providers</span>
@@ -220,10 +220,10 @@ const categoryStats = computed(() => {
             </div>
 
             <!-- Breakdown by File Category -->
-            <div class="p-5 rounded-2xl border border-white/[0.08] bg-[#111114] shadow-xs space-y-4">
+            <div class="p-5 rounded-2xl border border-white/[0.08] bg-[#141925] shadow-xs space-y-4">
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-sm text-zinc-100 flex items-center gap-2">
-                  <UIcon name="i-lucide-pie-chart" class="size-4 text-emerald-400" />
+                  <UIcon name="i-lucide-pie-chart" class="size-4 text-primary-400" />
                   Indexed File Categories
                 </h3>
                 <span class="text-xs text-zinc-500">{{ allFiles.length }} Total Files</span>
@@ -237,7 +237,7 @@ const categoryStats = computed(() => {
                 >
                   <div class="flex items-center justify-between text-xs">
                     <div class="flex items-center gap-2">
-                      <UIcon :name="cat.icon" class="size-4 text-emerald-400" />
+                      <UIcon :name="cat.icon" class="size-4 text-primary-400" />
                       <span class="font-medium text-zinc-200">{{ cat.label }}</span>
                     </div>
                     <span class="font-mono font-medium text-zinc-300">
@@ -246,7 +246,7 @@ const categoryStats = computed(() => {
                   </div>
 
                   <div class="h-1.5 w-full rounded-full bg-zinc-900 overflow-hidden">
-                    <div class="h-full rounded-full bg-emerald-500" :style="{ width: `${cat.percent}%` }" />
+                    <div class="h-full rounded-full bg-primary-500" :style="{ width: `${cat.percent}%` }" />
                   </div>
 
                   <div class="flex items-center justify-between text-[10px] text-zinc-500">

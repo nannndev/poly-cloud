@@ -24,12 +24,12 @@ defineEmits<{ retry: [] }>()
       class="p-4 rounded-3xl border"
       :class="variant === 'error'
         ? 'bg-rose-500/[0.06] border-rose-500/25 text-rose-400'
-        : 'bg-[#121215] border-white/[0.08] text-zinc-500'"
+        : 'bg-[#151a27] border-white/[0.08] text-zinc-500'"
     >
       <UIcon
         :name="variant === 'loading' ? 'i-lucide-loader-2' : variant === 'error' ? 'i-lucide-circle-alert' : icon"
         class="size-10"
-        :class="variant === 'loading' ? 'animate-spin text-emerald-400' : ''"
+        :class="variant === 'loading' ? 'animate-spin text-primary-400' : ''"
       />
     </div>
 

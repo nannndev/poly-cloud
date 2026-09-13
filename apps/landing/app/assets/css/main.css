@@ -6,18 +6,23 @@
    produk. Halaman ini dikunci dalam satu tema gelap: tak ada bagian yang
    berbalik ke terang di tengah gulir. */
 @theme {
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Outfit adalah tipografi lockup merek (docs/logo/README.md); Inter menyusul
+     sebagai cadangan bila Outfit tak terpasang. */
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-ink-950: #09090b;
-  --color-ink-900: #0d0d10;
-  --color-ink-850: #111114;
-  --color-ink-800: #151518;
-  --color-ink-700: #1a1a1f;
+  /* Permukaan bernuansa biru, seturut latar app icon gelap #1E2430 — hitam
+     netral membuat lambangnya tampak ditempel, bukan menyatu. */
+  --color-ink-950: #0b0e14;
+  --color-ink-900: #10141d;
+  --color-ink-850: #141925;
+  --color-ink-800: #1a1f2b;
+  --color-ink-700: #212736;
 
-  --color-accent-400: #34d399;
-  --color-accent-500: #10b981;
-  --color-accent-600: #059669;
+  /* Indigo & periwinkle dari lambang Arch. */
+  --color-accent-400: #8f9bf5;
+  --color-accent-500: #6b7bef;
+  --color-accent-600: #3d4ee0;
 }
 
 :root {
@@ -64,5 +69,5 @@ body {
 }
 
 ::selection {
-  background: rgba(16, 185, 129, 0.28);
+  background: rgba(109, 123, 239, 0.32);
 }

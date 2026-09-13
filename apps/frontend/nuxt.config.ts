@@ -12,6 +12,16 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  ui: {
+    // 'brand' bukan warna bawaan Tailwind, jadi harus didaftarkan di sini —
+    // app.config.ts saja tak cukup: tanpa baris ini Nuxt UI tak pernah
+    // mendefinisikan --ui-primary, dan seluruh komponen primary kehilangan
+    // warnanya tanpa pesan galat.
+    theme: {
+      colors: ['brand', 'secondary', 'success', 'info', 'warning', 'error']
+    }
+  },
+
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },
     layoutTransition: false

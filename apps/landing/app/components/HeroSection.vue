@@ -15,8 +15,10 @@ import { GITHUB } from '~/config/site'
 
     <div class="relative mx-auto grid max-w-6xl gap-12 px-4 pb-20 pt-16 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16 lg:pb-28 lg:pt-24">
       <div>
-        <p class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-850 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
-          Self-hosted
+        <!-- Tagline resmi dari lockup merek, dipakai apa adanya. -->
+        <p class="mb-5 inline-flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-ink-850 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
+          <PolyMark class="size-4" />
+          One space, every drive
         </p>
 
         <h1 class="text-pretty text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]">

@@ -43,7 +43,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
                 color="primary"
                 variant="subtle"
                 size="xs"
-                class="hidden sm:inline-flex rounded-lg font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                class="hidden sm:inline-flex rounded-lg font-semibold bg-primary-500/10 text-primary-400 border border-primary-500/20"
               />
             </div>
           </template>
@@ -63,7 +63,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
                 icon="i-lucide-upload-cloud"
                 color="primary"
                 variant="solid"
-                class="rounded-xl font-bold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 transition-all cursor-pointer"
+                class="rounded-xl font-bold shadow-xs bg-primary-600 hover:bg-primary-500 text-white px-3.5 transition-all cursor-pointer"
                 @click="filesStore.isUploadModalOpen = true"
               />
             </div>
@@ -95,10 +95,10 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
           <!-- Top KPI Metrics Banner -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Metric 1: Total Unified Storage -->
-            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#121215] hover:border-emerald-500/30 hover:bg-[#141418] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
+            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#151a27] hover:border-primary-500/30 hover:bg-[#1a1f2d] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Unified Capacity</span>
-                <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                <div class="p-2 rounded-xl bg-primary-500/10 text-primary-400 border border-primary-500/20 group-hover:scale-105 transition-transform">
                   <UIcon name="i-lucide-hard-drive" class="size-4" />
                 </div>
               </div>
@@ -113,21 +113,21 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
               </div>
               <div class="space-y-1.5 pt-1">
                 <div class="h-1.5 w-full bg-zinc-900 border border-white/[0.06] rounded-full overflow-hidden">
-                  <div class="h-full bg-emerald-500 rounded-full transition-all duration-300" :style="{ width: `${accountsStore.usagePercent}%` }" />
+                  <div class="h-full bg-primary-500 rounded-full transition-all duration-300" :style="{ width: `${accountsStore.usagePercent}%` }" />
                 </div>
                 <div class="flex justify-between text-[10px] text-zinc-400 font-mono font-medium">
-                  <span class="text-emerald-400 font-semibold">{{ accountsStore.usagePercent }}% used</span>
+                  <span class="text-primary-400 font-semibold">{{ accountsStore.usagePercent }}% used</span>
                   <span class="text-zinc-400 font-medium">{{ formatBytes(accountsStore.freeStorage) }} free</span>
                 </div>
               </div>
             </div>
 
             <!-- Metric 2: Total Items Indexed (VFS) -->
-            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#121215] hover:border-emerald-500/30 hover:bg-[#141418] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
+            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#151a27] hover:border-primary-500/30 hover:bg-[#1a1f2d] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">VFS Indexed Items</span>
                 <div class="p-2 rounded-xl bg-zinc-800/80 text-zinc-300 border border-white/[0.06] group-hover:scale-105 transition-transform">
-                  <UIcon name="i-lucide-folder-tree" class="size-4 text-emerald-400" />
+                  <UIcon name="i-lucide-folder-tree" class="size-4 text-primary-400" />
                 </div>
               </div>
               <div>
@@ -149,7 +149,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
                 <span class="text-zinc-400 font-medium">API Latency</span>
                 <span
                   class="font-mono font-medium"
-                  :class="status === 'offline' ? 'text-rose-400' : 'text-emerald-400'"
+                  :class="status === 'offline' ? 'text-rose-400' : 'text-primary-400'"
                 >
                   {{ status === 'offline' ? 'unreachable' : latency === null ? '—' : `${latency} ms` }}
                 </span>
@@ -157,7 +157,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
             </div>
 
             <!-- Metric 3: Connected Cloud Accounts -->
-            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#121215] hover:border-emerald-500/30 hover:bg-[#141418] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
+            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#151a27] hover:border-primary-500/30 hover:bg-[#1a1f2d] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Providers</span>
                 <div class="p-2 rounded-xl bg-zinc-800/80 text-zinc-300 border border-white/[0.06] group-hover:scale-105 transition-transform">
@@ -175,7 +175,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
               </div>
               <NuxtLink
                 to="/accounts"
-                class="inline-flex items-center justify-between w-full p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] text-[11px] font-medium text-zinc-300 hover:text-emerald-400 hover:border-emerald-500/30 transition-colors"
+                class="inline-flex items-center justify-between w-full p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] text-[11px] font-medium text-zinc-300 hover:text-primary-400 hover:border-primary-500/30 transition-colors"
               >
                 <span>Manage Accounts</span>
                 <UIcon name="i-lucide-arrow-right" class="size-3.5 text-zinc-400" />
@@ -183,7 +183,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
             </div>
 
             <!-- Metric 4: Smart Routing Engine -->
-            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#121215] hover:border-emerald-500/30 hover:bg-[#141418] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
+            <div class="p-5 rounded-3xl border border-white/[0.08] bg-[#151a27] hover:border-primary-500/30 hover:bg-[#1a1f2d] transition-all duration-200 space-y-3.5 relative overflow-hidden group shadow-xs">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Smart Routing</span>
                 <div class="p-2 rounded-xl bg-zinc-800/80 text-zinc-300 border border-white/[0.06] group-hover:scale-105 transition-transform">
@@ -201,7 +201,7 @@ const routingTarget = computed(() => accountsStore.recommendedAccount)
               <!-- Tujuan nyata menurut kuota terakhir, bukan contoh tetap. -->
               <div class="p-2 rounded-xl bg-zinc-900/80 border border-white/[0.06] flex items-center justify-between gap-2 text-[11px]">
                 <span class="text-zinc-400 font-medium shrink-0">Next Target</span>
-                <span v-if="routingTarget" class="font-medium text-emerald-400 truncate">
+                <span v-if="routingTarget" class="font-medium text-primary-400 truncate">
                   {{ routingTarget.label }} ({{ formatBytes(routingTarget.free_bytes) }})
                 </span>
                 <span v-else class="font-medium text-amber-400">No active account</span>

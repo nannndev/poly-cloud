@@ -199,16 +199,16 @@ function resetForm() {
   <UModal
     v-model:open="isOpen"
     :ui="{
-      content: 'sm:max-w-2xl bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+      content: 'sm:max-w-2xl bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
       body: 'p-6 space-y-5',
-      footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
     }"
   >
     <!-- Custom Modal Header -->
     <template #header>
-      <div class="px-6 pt-5 pb-4 bg-[#111114] flex items-start justify-between gap-4 border-b border-white/[0.06]">
+      <div class="px-6 pt-5 pb-4 bg-[#141925] flex items-start justify-between gap-4 border-b border-white/[0.06]">
         <div class="flex items-start gap-3.5">
-          <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/15 text-primary-400 border border-primary-500/25">
             <UIcon name="i-lucide-cloud-plus" class="size-6" />
           </div>
           <div>
@@ -219,11 +219,11 @@ function resetForm() {
                 color="primary"
                 variant="subtle"
                 size="xs"
-                class="rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-medium"
+                class="rounded-md bg-primary-500/10 text-primary-400 border border-primary-500/20 text-[9px] font-medium"
               />
             </h2>
             <p class="text-xs text-zinc-400 mt-0.5 leading-relaxed max-w-lg">
-              Dynamic provisioning injects credentials as an isolated <code class="text-emerald-400 font-mono text-[11px]">acc_&lt;uuid&gt;:</code> remote in the internal rclone daemon.
+              Dynamic provisioning injects credentials as an isolated <code class="text-primary-400 font-mono text-[11px]">acc_&lt;uuid&gt;:</code> remote in the internal rclone daemon.
             </p>
           </div>
         </div>
@@ -245,7 +245,7 @@ function resetForm() {
           <div class="flex items-center justify-between mb-2.5">
             <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <span>1. Select Storage Provider</span>
-              <span class="text-emerald-400 font-normal">({{ providers.length }} supported)</span>
+              <span class="text-primary-400 font-normal">({{ providers.length }} supported)</span>
             </label>
             <span class="text-[11px] text-zinc-500 font-medium">Selected: <strong class="text-zinc-200">{{ currentProviderMeta.name }}</strong></span>
           </div>
@@ -258,14 +258,14 @@ function resetForm() {
               class="group relative flex flex-col justify-between p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer shadow-xs"
               :class="[
                 selectedProvider === p.id
-                  ? 'border-emerald-500/60 bg-emerald-500/10 ring-1 ring-emerald-500/30'
-                  : 'border-white/[0.07] bg-[#121215] hover:border-white/[0.15] hover:bg-[#15151a]'
+                  ? 'border-primary-500/60 bg-primary-500/10 ring-1 ring-primary-500/30'
+                  : 'border-white/[0.07] bg-[#151a27] hover:border-white/[0.15] hover:bg-[#1b2130]'
               ]"
               @click="selectProvider(p.id)"
             >
               <div class="flex items-start justify-between w-full mb-3">
-                <div class="flex size-9 items-center justify-center rounded-xl bg-[#16161b] border border-white/[0.06] group-hover:scale-105 transition-transform">
-                  <UIcon :name="p.icon" class="size-5 text-emerald-400" />
+                <div class="flex size-9 items-center justify-center rounded-xl bg-[#1c2231] border border-white/[0.06] group-hover:scale-105 transition-transform">
+                  <UIcon :name="p.icon" class="size-5 text-primary-400" />
                 </div>
 
                 <div class="flex items-center gap-1">
@@ -273,7 +273,7 @@ function resetForm() {
                     class="text-[9px] font-semibold px-1.5 py-0.5 rounded-md border"
                     :class="[
                       p.isOAuth
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        ? 'bg-primary-500/10 text-primary-400 border-primary-500/20'
                         : 'bg-zinc-800/80 text-zinc-400 border-white/[0.06]'
                     ]"
                   >
@@ -282,7 +282,7 @@ function resetForm() {
                   <UIcon
                     v-if="selectedProvider === p.id"
                     name="i-lucide-check"
-                    class="size-3.5 text-emerald-400 stroke-[3]"
+                    class="size-3.5 text-primary-400 stroke-[3]"
                   />
                 </div>
               </div>
@@ -296,8 +296,8 @@ function resetForm() {
         </div>
 
         <!-- 2. Security & Provisioning Architecture Note (ADR-010 & Doc 10) -->
-        <div class="flex items-start gap-3 p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] text-xs">
-          <UIcon name="i-lucide-shield-check" class="size-4 text-emerald-400 shrink-0 mt-0.5" />
+        <div class="flex items-start gap-3 p-3.5 rounded-2xl border border-primary-500/20 bg-primary-500/[0.05] text-xs">
+          <UIcon name="i-lucide-shield-check" class="size-4 text-primary-400 shrink-0 mt-0.5" />
           <div class="leading-relaxed">
             <span class="font-bold text-white">
               {{ currentProviderMeta.isOAuth ? 'Backend-Managed OAuth Architecture:' : 'Direct Key Provisioning Architecture:' }}
@@ -346,7 +346,7 @@ function resetForm() {
           </div>
 
           <!-- Key-based provider credentials (S3, R2, B2) -->
-          <div v-if="!currentProviderMeta.isOAuth" class="p-4 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-3.5">
+          <div v-if="!currentProviderMeta.isOAuth" class="p-4 rounded-2xl bg-[#151a27] border border-white/[0.07] space-y-3.5">
             <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
               <span class="flex items-center gap-1.5">
                 <UIcon name="i-lucide-key" class="size-3.5 text-amber-400" />
@@ -378,7 +378,7 @@ function resetForm() {
                   </label>
                   <button
                     type="button"
-                    class="text-[10px] text-emerald-400 hover:underline cursor-pointer"
+                    class="text-[10px] text-primary-400 hover:underline cursor-pointer"
                     @click="showSecret = !showSecret"
                   >
                     {{ showSecret ? 'Hide' : 'Show' }}
@@ -439,7 +439,7 @@ function resetForm() {
     <template #footer>
       <div class="flex items-center justify-between w-full">
         <span class="text-[11px] text-zinc-500 flex items-center gap-1.5">
-          <UIcon name="i-lucide-cpu" class="size-3.5 text-emerald-400" />
+          <UIcon name="i-lucide-cpu" class="size-3.5 text-primary-400" />
           <span>Provisioning target: <code class="font-mono text-zinc-400">rclone rcd (localhost:5572)</code></span>
         </span>
 
@@ -454,7 +454,7 @@ function resetForm() {
 
           <button
             type="button"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-primary-600 hover:bg-primary-500 text-white shadow-xs transition-all cursor-pointer disabled:opacity-50"
             :disabled="isSubmitting || (currentProviderMeta.isOAuth && !isProviderReady)"
             @click="handleConnect"
           >

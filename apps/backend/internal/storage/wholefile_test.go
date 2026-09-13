@@ -160,7 +160,7 @@ func TestObjectPath(t *testing.T) {
 	cases := []struct {
 		name, providerRef, want string
 	}{
-		{"file-id provider dipadu base dir", "gdrive-abc123", "PolyCloud/gdrive-abc123"},
+		{"ref lama tanpa path dianggap nama di base dir", "gdrive-abc123", "PolyCloud/gdrive-abc123"},
 		{"ref berbentuk path dipakai apa adanya", "PolyCloud/foto.jpg", "PolyCloud/foto.jpg"},
 	}
 	for _, tc := range cases {
@@ -168,6 +168,59 @@ func TestObjectPath(t *testing.T) {
 			got := s.objectPath(domain.FileBlock{ProviderRef: tc.providerRef})
 			if got != tc.want {
 				t.Fatalf("objectPath = %q, mau %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// provider_ref yang dicatat harus berupa path objek, bukan file-id provider.
+// Engine menjangkau objek lewat rclone serve yang hanya mengerti path, jadi
+// menyimpan file-id membuat download menjawab 404 — dan karena header sudah
+// terkirim lebih dulu, klien menerima 200 dengan badan kosong: pratinjau
+// tampak blank tanpa satu pun pesan galat.
+func TestObjectPathMenemukanObjekDariRefYangDicatat(t *testing.T) {
+	const (
+		remote = "acc_1:"
+		dir    = "PolyCloud"
+		name   = "foto.png"
+	)
+
+	eng := newFakeEngine()
+	ctx := context.Background()
+	if err := eng.UploadStream(ctx, strings.NewReader("isi"), remote, dir, name); err != nil {
+		t.Fatalf("UploadStream: %v", err)
+	}
+
+	objectPath := engine.Join(dir, name)
+	stat, err := eng.Stat(ctx, remote, objectPath)
+	if err != nil {
+		t.Fatalf("Stat: %v", err)
+	}
+
+	// Bentuk yang dulu dicatat Upload (stat.ID) vs bentuk yang dicatat sekarang.
+	store := &WholeFileStore{deps: &Deps{BaseDir: dir}}
+	for _, tc := range []struct {
+		name, ref string
+		wantFound bool
+	}{
+		{"path objek — bentuk yang dicatat sekarang", objectPath, true},
+		{"file-id provider — bentuk lama yang bikin 404", stat.ID, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			resolved := store.objectPath(domain.FileBlock{ProviderRef: tc.ref})
+			var buf bytes.Buffer
+			err := eng.Download(ctx, remote, resolved, &buf)
+			if tc.wantFound {
+				if err != nil {
+					t.Fatalf("objek tak terjangkau lewat %q: %v", resolved, err)
+				}
+				if buf.String() != "isi" {
+					t.Fatalf("isi = %q, mau %q", buf.String(), "isi")
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("ref %q seharusnya tak menemukan objek, tapi berhasil", tc.ref)
 			}
 		})
 	}

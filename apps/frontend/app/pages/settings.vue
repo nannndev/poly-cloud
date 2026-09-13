@@ -101,7 +101,7 @@ await useAsyncData('settings-page', async () => {
                 color="primary"
                 variant="subtle"
                 size="xs"
-                class="rounded-lg font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                class="rounded-lg font-medium bg-primary-500/10 text-primary-400 border border-primary-500/20"
               />
             </div>
           </template>
@@ -146,7 +146,7 @@ await useAsyncData('settings-page', async () => {
                   <div
                     class="flex items-center gap-2 px-3 py-1 rounded-xl border text-xs font-semibold"
                     :class="{
-                      'border-emerald-500/30 bg-emerald-500/10 text-emerald-500': backendStatus === 'online',
+                      'border-primary-500/30 bg-primary-500/10 text-primary-500': backendStatus === 'online',
                       'border-amber-500/30 bg-amber-500/10 text-amber-500': backendStatus === 'degraded',
                       'border-rose-500/30 bg-rose-500/10 text-rose-500': backendStatus === 'offline',
                       'border-default/70 bg-elevated/40 text-muted': backendStatus === 'checking'
@@ -155,7 +155,7 @@ await useAsyncData('settings-page', async () => {
                     <span
                       class="size-2 rounded-full"
                       :class="{
-                        'bg-emerald-500 animate-pulse': backendStatus === 'online',
+                        'bg-primary-500 animate-pulse': backendStatus === 'online',
                         'bg-amber-500': backendStatus === 'degraded',
                         'bg-rose-500': backendStatus === 'offline',
                         'bg-zinc-500 animate-pulse': backendStatus === 'checking'
@@ -200,7 +200,7 @@ await useAsyncData('settings-page', async () => {
                       <UIcon name="i-lucide-activity" class="size-3.5 text-sky-500" />
                       /healthz
                     </span>
-                    <span class="font-mono font-bold text-sm" :class="backendStatus === 'offline' ? 'text-rose-500' : 'text-emerald-500'">
+                    <span class="font-mono font-bold text-sm" :class="backendStatus === 'offline' ? 'text-rose-500' : 'text-primary-500'">
                       {{ backendLatency === null ? '—' : `${backendLatency} ms` }}
                     </span>
                   </div>
@@ -214,7 +214,7 @@ await useAsyncData('settings-page', async () => {
                   :key="key"
                   class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono"
                   :class="value === 'ok'
-                    ? 'border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-400'
+                    ? 'border-primary-500/25 bg-primary-500/[0.07] text-primary-400'
                     : 'border-amber-500/25 bg-amber-500/[0.07] text-amber-400'"
                 >
                   <UIcon :name="value === 'ok' ? 'i-lucide-check' : 'i-lucide-triangle-alert'" class="size-3" />
@@ -308,7 +308,7 @@ await useAsyncData('settings-page', async () => {
                   <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Object Folder</span>
                   <code class="text-[10px] font-mono text-muted">RCLONE_BASE_DIR</code>
                 </div>
-                <code class="block font-mono text-sm text-emerald-400">{{ settings.remote_base_dir }}/</code>
+                <code class="block font-mono text-sm text-primary-400">{{ settings.remote_base_dir }}/</code>
                 <p class="text-[11px] text-muted leading-relaxed">
                   Every object lands flat in this folder on each account. The folder structure
                   you see lives in the database, not at the provider.
@@ -319,7 +319,7 @@ await useAsyncData('settings-page', async () => {
               <div class="p-5 rounded-2xl border border-default/70 bg-elevated/20 space-y-2">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-muted block">Transfer</span>
                 <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-shield-check" class="size-4 text-emerald-500 shrink-0" />
+                  <UIcon name="i-lucide-shield-check" class="size-4 text-primary-500 shrink-0" />
                   <span class="font-bold text-sm text-highlighted">Stream-through</span>
                 </div>
                 <p class="text-[11px] text-muted leading-relaxed">
@@ -338,7 +338,7 @@ await useAsyncData('settings-page', async () => {
           <div class="p-6 rounded-3xl border border-default/80 bg-card shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div class="flex items-start gap-3.5">
-                <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-500 border border-primary-500/20">
                   <UIcon name="i-lucide-database" class="size-6" />
                 </div>
                 <div>
@@ -357,7 +357,7 @@ await useAsyncData('settings-page', async () => {
                 </div>
                 <div>
                   <span class="text-muted block text-[10px] uppercase tracking-wider">Free</span>
-                  <span class="text-emerald-500 font-bold text-sm">{{ formatBytes(accountsStore.freeStorage) }}</span>
+                  <span class="text-primary-500 font-bold text-sm">{{ formatBytes(accountsStore.freeStorage) }}</span>
                 </div>
                 <div>
                   <span class="text-muted block text-[10px] uppercase tracking-wider">Total</span>

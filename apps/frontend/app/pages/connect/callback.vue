@@ -67,15 +67,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-[#09090b] text-zinc-200">
-    <div class="max-w-lg w-full p-8 rounded-3xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl space-y-6">
+  <div class="min-h-screen flex items-center justify-center p-4 bg-[#0b0e14] text-zinc-200">
+    <div class="max-w-lg w-full p-8 rounded-3xl border border-white/[0.08] bg-[#0d111a] shadow-2xl space-y-6">
       <!-- Status utama -->
       <div class="flex flex-col items-center text-center space-y-3">
         <div
           class="flex size-14 items-center justify-center rounded-2xl border"
           :class="phase === 'failed'
             ? 'bg-red-500/15 text-red-400 border-red-500/25'
-            : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'"
+            : 'bg-primary-500/15 text-primary-400 border-primary-500/25'"
         >
           <UIcon
             :name="phase === 'failed' ? 'i-lucide-x' : phase === 'done' ? 'i-lucide-check' : 'i-lucide-loader-2'"
@@ -94,7 +94,7 @@ onMounted(async () => {
           </h2>
           <p v-if="phase !== 'failed'" class="text-xs text-zinc-400 mt-1 max-w-sm">
             The backend exchanges the authorization code, stores the encrypted token, then
-            registers <strong class="text-emerald-400">{{ accountLabel || 'this account' }}</strong>
+            registers <strong class="text-primary-400">{{ accountLabel || 'this account' }}</strong>
             as a remote in the rclone daemon.
           </p>
           <p v-else class="text-xs text-zinc-400 mt-1 max-w-sm">{{ errorMessage }}</p>
@@ -102,7 +102,7 @@ onMounted(async () => {
       </div>
 
       <!-- Stepper -->
-      <div v-if="phase !== 'failed'" class="space-y-2.5 p-4 rounded-2xl bg-[#121215] border border-white/[0.07]">
+      <div v-if="phase !== 'failed'" class="space-y-2.5 p-4 rounded-2xl bg-[#151a27] border border-white/[0.07]">
         <div
           v-for="step in steps"
           :key="step.id"
@@ -119,12 +119,12 @@ onMounted(async () => {
             <UIcon
               v-if="phase === 'done' || step.id < currentStep"
               name="i-lucide-check-circle-2"
-              class="size-4 text-emerald-400"
+              class="size-4 text-primary-400"
             />
             <UIcon
               v-else-if="step.id === currentStep"
               name="i-lucide-loader-2"
-              class="size-4 text-emerald-400 animate-spin"
+              class="size-4 text-primary-400 animate-spin"
             />
             <div
               v-else
@@ -135,7 +135,7 @@ onMounted(async () => {
           </div>
 
           <div class="min-w-0">
-            <p class="font-medium text-[11px]" :class="step.id === currentStep && phase !== 'done' ? 'text-emerald-300 font-semibold' : ''">
+            <p class="font-medium text-[11px]" :class="step.id === currentStep && phase !== 'done' ? 'text-primary-300 font-semibold' : ''">
               {{ step.title }}
             </p>
             <p class="text-[10px] text-zinc-500 truncate mt-0.5">{{ step.desc }}</p>
@@ -147,13 +147,13 @@ onMounted(async () => {
       <div v-if="phase !== 'failed'" class="space-y-2">
         <div class="h-1.5 w-full bg-zinc-900 border border-white/[0.06] rounded-full overflow-hidden">
           <div
-            class="h-full bg-emerald-500 rounded-full transition-all duration-500"
+            class="h-full bg-primary-500 rounded-full transition-all duration-500"
             :style="{ width: `${progressPercent}%` }"
           />
         </div>
         <div class="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
           <span>{{ phase === 'done' ? 'Done' : 'In progress' }}</span>
-          <span class="text-emerald-400">{{ progressPercent }}%</span>
+          <span class="text-primary-400">{{ progressPercent }}%</span>
         </div>
       </div>
 

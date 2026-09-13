@@ -22,11 +22,8 @@ watch(() => route.fullPath, () => { isOpen.value = false })
   <header class="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/85 backdrop-blur-xl">
     <nav class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
       <NuxtLink to="/" class="flex shrink-0 items-center gap-2.5">
-        <span class="grid size-8 place-items-center rounded-xl border border-accent-500/25 bg-accent-500/10">
-          <svg viewBox="0 0 24 24" class="size-4 text-accent-400" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-            <path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z" stroke-linejoin="round" />
-            <path d="m4 7.5 8 4.5 8-4.5M12 12v9" stroke-linejoin="round" />
-          </svg>
+        <span class="grid size-8 place-items-center rounded-xl border border-accent-400/25 bg-[#1E2430]">
+          <PolyMark class="size-[19px]" />
         </span>
         <span class="text-sm font-semibold tracking-tight text-white">Poly Cloud</span>
       </NuxtLink>

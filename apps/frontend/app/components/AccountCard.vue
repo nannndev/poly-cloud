@@ -97,8 +97,8 @@ async function handleReconnect() {
     class="relative flex flex-col justify-between p-5 rounded-3xl border transition-all duration-200 shadow-xs group overflow-hidden"
     :class="[
       account.status === 'needs_reconnect'
-        ? 'border-amber-500/30 bg-[#161411]'
-        : 'border-white/[0.08] bg-[#111114] hover:border-emerald-500/30 hover:bg-[#131317]'
+        ? 'border-amber-500/30 bg-[#1f1b14]'
+        : 'border-white/[0.08] bg-[#141925] hover:border-primary-500/30 hover:bg-[#171c2a]'
     ]"
   >
     <div>
@@ -106,13 +106,13 @@ async function handleReconnect() {
       <div class="flex items-start justify-between gap-3 mb-4">
         <div class="flex items-center gap-3 min-w-0">
           <div
-            class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.06] bg-[#16161b] text-lg shadow-xs group-hover:scale-105 transition-transform"
+            class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.06] bg-[#1c2231] text-lg shadow-xs group-hover:scale-105 transition-transform"
           >
             <UIcon :name="providerMeta.icon" class="size-5" />
           </div>
 
           <div class="min-w-0 leading-tight">
-            <h3 class="font-semibold text-sm text-zinc-100 truncate group-hover:text-emerald-400 transition-colors">
+            <h3 class="font-semibold text-sm text-zinc-100 truncate group-hover:text-primary-400 transition-colors">
               {{ account.label }}
             </h3>
             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -128,7 +128,7 @@ async function handleReconnect() {
             color="primary"
             variant="subtle"
             size="xs"
-            class="rounded-lg px-2 py-0.5 font-medium text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            class="rounded-lg px-2 py-0.5 font-medium text-[10px] bg-primary-500/10 text-primary-400 border border-primary-500/20"
           />
           <UBadge
             v-else-if="account.status === 'needs_reconnect'"
@@ -174,7 +174,7 @@ async function handleReconnect() {
         <template v-if="account.total_bytes > 0">
           <div class="flex items-center justify-between text-xs">
             <div class="flex items-center gap-1.5 text-zinc-400">
-              <UIcon name="i-lucide-database" class="size-3.5 text-emerald-400" />
+              <UIcon name="i-lucide-database" class="size-3.5 text-primary-400" />
               <span>Capacity Utilized</span>
             </div>
             <span class="font-semibold font-mono text-zinc-200">{{ usagePercent }}%</span>
@@ -189,7 +189,7 @@ async function handleReconnect() {
 
           <div class="flex items-center justify-between text-[11px] font-mono">
             <span class="text-zinc-500">{{ formatBytes(account.used_bytes) }} used</span>
-            <span class="text-emerald-400 font-medium">{{ formatBytes(account.free_bytes) }} free</span>
+            <span class="text-primary-400 font-medium">{{ formatBytes(account.free_bytes) }} free</span>
           </div>
         </template>
 
@@ -238,9 +238,9 @@ async function handleReconnect() {
     <UModal
       v-model:open="isDisconnectOpen"
       :ui="{
-        content: 'sm:max-w-md bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
         body: 'p-6 space-y-3',
-        footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
       }"
     >
       <template #header>

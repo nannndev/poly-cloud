@@ -75,10 +75,10 @@ const items = computed<DropdownMenuItem[][]>(() => [
     >
       <!-- Penanda instans, bukan identitas pengguna (v1 belum punya login) -->
       <div class="relative shrink-0">
-        <div class="size-8 rounded-full border border-default bg-elevated flex items-center justify-center">
-          <UIcon name="i-lucide-hard-drive" class="size-4 text-emerald-400" />
+        <div class="flex size-8 items-center justify-center rounded-full border border-brand-400/25 bg-[#1E2430]">
+          <PolyMark class="size-[18px]" />
         </div>
-        <span class="absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 ring-2 ring-card" />
+        <span class="absolute bottom-0 right-0 size-2 rounded-full bg-primary-500 ring-2 ring-card" />
       </div>
 
       <div v-if="!collapsed" class="min-w-0 flex-1 leading-tight space-y-0.5">

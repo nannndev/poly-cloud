@@ -64,7 +64,7 @@ async function handleSyncAll() {
                 color="primary"
                 variant="subtle"
                 size="xs"
-                class="rounded-lg font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                class="rounded-lg font-medium bg-primary-500/10 text-primary-400 border border-primary-500/20"
               />
             </div>
           </template>
@@ -84,7 +84,7 @@ async function handleSyncAll() {
               icon="i-lucide-plus"
               color="primary"
               variant="solid"
-              class="rounded-xl font-semibold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 transition-all cursor-pointer"
+              class="rounded-xl font-semibold shadow-xs bg-primary-600 hover:bg-primary-500 text-white px-3.5 transition-all cursor-pointer"
               @click="isConnectModalOpen = true"
             />
           </template>
@@ -95,16 +95,16 @@ async function handleSyncAll() {
         <div class="space-y-6 p-1">
           <!-- Summary Hero Card: Clean Matte Black with Soft Emerald Accent -->
           <div
-            class="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-5 p-6 rounded-3xl border border-white/[0.08] bg-[#111114] shadow-xs"
+            class="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-5 p-6 rounded-3xl border border-white/[0.08] bg-[#141925] shadow-xs"
           >
             <div class="flex items-center gap-4">
-              <div class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+              <div class="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-primary-500/15 text-primary-400 border border-primary-500/25">
                 <UIcon name="i-lucide-cloud-cog" class="size-6" />
               </div>
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <h3 class="font-bold text-base text-zinc-100">Multi-Provider Storage Mesh</h3>
-                  <UBadge label="Zero Vendor Lock-in" color="primary" variant="subtle" size="xs" class="rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]" />
+                  <UBadge label="Zero Vendor Lock-in" color="primary" variant="subtle" size="xs" class="rounded-md bg-primary-500/10 text-primary-400 border border-primary-500/20 text-[10px]" />
                 </div>
                 <p class="text-xs text-zinc-400 max-w-xl leading-relaxed">
                   Poly Cloud aggregates Google Drive, OneDrive, Dropbox, and AWS S3 into a single unified virtual drive with automated smart routing and deduplication.
@@ -119,7 +119,7 @@ async function handleSyncAll() {
               </div>
               <div class="text-left md:text-right">
                 <span class="text-zinc-500 block text-[10px] uppercase font-bold tracking-wider">Free Capacity</span>
-                <span class="font-mono text-base font-bold text-emerald-400">{{ formatBytes(accountsStore.freeStorage) }}</span>
+                <span class="font-mono text-base font-bold text-primary-400">{{ formatBytes(accountsStore.freeStorage) }}</span>
               </div>
             </div>
           </div>
@@ -187,13 +187,13 @@ async function handleSyncAll() {
             <!-- Connect Account CTA Card -->
             <button
               type="button"
-              class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-white/[0.1] hover:border-emerald-500/40 bg-[#111114] hover:bg-[#141418] transition-all text-center min-h-[220px] group cursor-pointer"
+              class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-white/[0.1] hover:border-primary-500/40 bg-[#141925] hover:bg-[#1a1f2d] transition-all text-center min-h-[220px] group cursor-pointer"
               @click="isConnectModalOpen = true"
             >
-              <div class="flex size-11 items-center justify-center rounded-2xl bg-zinc-800 text-zinc-400 group-hover:bg-emerald-500/15 group-hover:text-emerald-400 transition-all mb-3 group-hover:scale-105">
+              <div class="flex size-11 items-center justify-center rounded-2xl bg-zinc-800 text-zinc-400 group-hover:bg-primary-500/15 group-hover:text-primary-400 transition-all mb-3 group-hover:scale-105">
                 <UIcon name="i-lucide-cloud-upload" class="size-5" />
               </div>
-              <h4 class="font-semibold text-xs text-zinc-200 group-hover:text-emerald-400 transition-colors">
+              <h4 class="font-semibold text-xs text-zinc-200 group-hover:text-primary-400 transition-colors">
                 Connect New Cloud Account
               </h4>
               <p class="text-[11px] text-zinc-500 mt-1 max-w-xs leading-normal">

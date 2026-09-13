@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
 
-const color = computed(() => colorMode.value === 'dark' ? '#09090b' : '#ffffff')
+const color = computed(() => colorMode.value === 'dark' ? '#0b0e14' : '#ffffff')
 
 useHead({
   meta: [
@@ -10,14 +10,15 @@ useHead({
     { key: 'theme-color', name: 'theme-color', content: color }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+    { rel: 'apple-touch-icon', href: '/app-icon-192.png' }
   ],
   htmlAttrs: {
     lang: 'en'
   }
 })
 
-const title = 'Poly Cloud — Unified Multi-Cloud Storage Aggregator'
+const title = 'Poly Cloud — One space, every drive'
 const description = 'Unified cloud storage aggregator across Google Drive, OneDrive, Dropbox, and AWS S3 with smart routing, instant search, and centralized quota control.'
 
 useSeoMeta({

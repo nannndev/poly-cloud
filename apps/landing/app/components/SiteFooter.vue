@@ -40,10 +40,8 @@ const year = new Date().getFullYear()
       <div class="grid gap-10 lg:grid-cols-[1.4fr_2fr]">
         <div>
           <NuxtLink to="/" class="flex items-center gap-2.5">
-            <span class="grid size-7 place-items-center rounded-lg border border-accent-500/25 bg-accent-500/10">
-              <svg viewBox="0 0 24 24" class="size-3.5 text-accent-400" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
-                <path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z" stroke-linejoin="round" />
-              </svg>
+            <span class="grid size-7 place-items-center rounded-lg border border-accent-400/25 bg-[#1E2430]">
+              <PolyMark class="size-4" />
             </span>
             <span class="text-[13px] font-medium text-zinc-300">Poly Cloud</span>
           </NuxtLink>

@@ -33,7 +33,19 @@ services:
     expose:
       - "5572"
     healthcheck:
-      test: ["CMD", "sh", "-c", "wget -q -O- --post-data='{}' --header='Content-Type: application/json' --http-user=${RCLONE_RC_USER:-polycloud} --http-password=${RCLONE_RC_PASS:-polycloud-rc-secret} http://localhost:5572/rc/noop || exit 1"]
+      # wget di image rclone berasal dari BusyBox, yang tak mengenal
+      # --http-user/--http-password, jadi basic auth disusun sendiri sebagai
+      # header. Kredensialnya disubstitusi Compose dari .env dengan $ tunggal —
+      # sama seperti argumen --rc-pass di atas. Memakai $$ akan menyerahkan
+      # evaluasinya ke shell container, yang tak punya variabel itu sama sekali
+      # dan diam-diam jatuh ke nilai default yang salah, lalu ditolak 401.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -q -O- --post-data='{}'
+          --header='Content-Type: application/json'
+          --header="Authorization: Basic $(printf '%s:%s' '${RCLONE_RC_USER:-polycloud}' '${RCLONE_RC_PASS:-polycloud-rc-secret}' | base64 | tr -d '\n')"
+          http://localhost:5572/rc/noop || exit 1
       interval: 10s
       timeout: 5s
       retries: 5

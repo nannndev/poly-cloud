@@ -34,7 +34,7 @@ function getFileBadge(fileName: string) {
   if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
     return {
       ext: 'XLSX',
-      color: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30',
+      color: 'bg-gradient-to-br from-primary-500 to-teal-600 text-white shadow-md shadow-primary-500/30',
       icon: 'i-lucide-file-spreadsheet'
     }
   }
@@ -156,22 +156,22 @@ function triggerFileInput() {
   <UModal
     v-model:open="filesStore.isUploadModalOpen"
     :ui="{
-      content: 'sm:max-w-2xl bg-[#0c0c0e] dark:bg-[#0c0c0e] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+      content: 'sm:max-w-2xl bg-[#0d111a] dark:bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
       body: 'p-6 space-y-5',
-      footer: 'px-6 py-4 bg-[#09090b] border-t border-white/[0.06]'
+      footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
     }"
   >
     <!-- Modal Header -->
     <template #header>
-      <div class="px-6 pt-5 pb-4 bg-[#111114] flex items-start justify-between gap-4 border-b border-white/[0.06]">
+      <div class="px-6 pt-5 pb-4 bg-[#141925] flex items-start justify-between gap-4 border-b border-white/[0.06]">
         <div class="flex items-start gap-3.5">
-          <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/15 text-primary-400 border border-primary-500/25">
             <UIcon name="i-lucide-upload-cloud" class="size-5" />
           </div>
           <div>
             <h2 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
               Smart Multi-Cloud File Upload
-              <UBadge label="Zero Vendor Lock-in" color="primary" variant="subtle" size="xs" class="font-medium text-[9px] rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" />
+              <UBadge label="Zero Vendor Lock-in" color="primary" variant="subtle" size="xs" class="font-medium text-[9px] rounded-md bg-primary-500/10 text-primary-400 border border-primary-500/20" />
             </h2>
             <p class="text-xs text-zinc-400 mt-0.5 leading-relaxed max-w-lg">
               Dynamic animated tracker with real-time transfer telemetry, smart routing, and instant file synchronization.
@@ -194,7 +194,7 @@ function triggerFileInput() {
         <!-- Dual Target Placement Config: Virtual Folder vs Cloud Provider -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- Placement 1: Virtual Folder Destination -->
-          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-2">
+          <div class="p-3.5 rounded-2xl bg-[#151a27] border border-white/[0.07] space-y-2">
             <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
               <span class="flex items-center gap-2">
                 <UIcon name="i-lucide-folder" class="size-4 text-amber-400" />
@@ -205,17 +205,17 @@ function triggerFileInput() {
             <USelect
               v-model="selectedFolderId"
               :items="folderOptions"
-              class="w-full rounded-xl bg-[#16161a] border border-white/[0.08] text-white"
+              class="w-full rounded-xl bg-[#1c2231] border border-white/[0.08] text-white"
               icon="i-lucide-folder-open"
               size="md"
             />
           </div>
 
           <!-- Tujuan fisik ditentukan backend, bukan dipilih user (ADR-008) -->
-          <div class="p-3.5 rounded-2xl bg-[#121215] border border-white/[0.07] space-y-2">
+          <div class="p-3.5 rounded-2xl bg-[#151a27] border border-white/[0.07] space-y-2">
             <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
               <span class="flex items-center gap-2">
-                <UIcon name="i-lucide-route" class="size-4 text-emerald-400" />
+                <UIcon name="i-lucide-route" class="size-4 text-primary-400" />
                 Cloud Target (Smart Routing)
               </span>
               <span class="text-[10px] text-zinc-400 font-mono">Physical</span>
@@ -223,9 +223,9 @@ function triggerFileInput() {
 
             <div
               v-if="recommendedAccount"
-              class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#16161a] border border-white/[0.08]"
+              class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#1c2231] border border-white/[0.08]"
             >
-              <UIcon name="i-lucide-zap" class="size-4 text-emerald-400 shrink-0" />
+              <UIcon name="i-lucide-zap" class="size-4 text-primary-400 shrink-0" />
               <div class="min-w-0">
                 <p class="text-xs font-semibold text-white truncate">{{ recommendedAccount.label }}</p>
                 <p class="text-[10px] text-zinc-500">
@@ -252,8 +252,8 @@ function triggerFileInput() {
           class="relative flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed transition-all duration-200 cursor-pointer overflow-hidden group"
           :class="[
             isDragging
-              ? 'border-emerald-500/60 bg-emerald-500/10 scale-[0.99]'
-              : 'border-white/[0.12] bg-[#121215] hover:border-emerald-500/40 hover:bg-[#141418]'
+              ? 'border-primary-500/60 bg-primary-500/10 scale-[0.99]'
+              : 'border-white/[0.12] bg-[#151a27] hover:border-primary-500/40 hover:bg-[#1a1f2d]'
           ]"
           @dragover.prevent="isDragging = true"
           @dragleave.prevent="isDragging = false"
@@ -270,13 +270,13 @@ function triggerFileInput() {
 
           <!-- Cloud Upload Glow Icon -->
           <div class="relative mb-3">
-            <div class="flex size-13 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 transition-transform group-hover:scale-105">
+            <div class="flex size-13 items-center justify-center rounded-2xl bg-primary-500/15 text-primary-400 border border-primary-500/25 transition-transform group-hover:scale-105">
               <UIcon name="i-lucide-cloud-arrow-up" class="size-6" />
             </div>
           </div>
 
           <p class="text-sm font-semibold text-white text-center">
-            Drag files here or <span class="text-emerald-400 underline underline-offset-4 decoration-emerald-400/40 hover:decoration-emerald-400">browse from computer</span>
+            Drag files here or <span class="text-primary-400 underline underline-offset-4 decoration-primary-400/40 hover:decoration-primary-400">browse from computer</span>
           </p>
           <p class="text-xs text-zinc-400 text-center mt-1 max-w-sm">
             Files stream straight to the provider — no copy is ever spooled on the server.
@@ -307,10 +307,10 @@ function triggerFileInput() {
               class="relative flex flex-col p-4 rounded-2xl border transition-all duration-200 shadow-xs group overflow-hidden"
               :class="[
                 job.status === 'completed'
-                  ? 'border-emerald-500/30 bg-[#121614]'
+                  ? 'border-primary-500/30 bg-[#141d1c]'
                   : job.status === 'error'
-                  ? 'border-red-500/30 bg-[#161213]'
-                  : 'border-white/[0.08] bg-[#131317] hover:border-emerald-500/30'
+                  ? 'border-red-500/30 bg-[#1e1719]'
+                  : 'border-white/[0.08] bg-[#171c2a] hover:border-primary-500/30'
               ]"
             >
               <!-- Card Top Content: File Badge + Title + Metrics + Action Buttons -->
@@ -330,7 +330,7 @@ function triggerFileInput() {
 
                   <!-- File Name & Dynamic Status Tracker -->
                   <div class="min-w-0 leading-tight">
-                    <h4 class="font-bold text-sm text-white truncate group-hover:text-emerald-300 transition-colors" :title="job.file_name">
+                    <h4 class="font-bold text-sm text-white truncate group-hover:text-primary-300 transition-colors" :title="job.file_name">
                       {{ job.file_name }}
                     </h4>
                     
@@ -338,9 +338,9 @@ function triggerFileInput() {
                       <!-- Status State -->
                       <span
                         v-if="job.status === 'uploading'"
-                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-medium text-[10px] border border-emerald-500/20"
+                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary-500/10 text-primary-400 font-medium text-[10px] border border-primary-500/20"
                       >
-                        <span class="size-1.5 rounded-full bg-emerald-400 animate-ping" />
+                        <span class="size-1.5 rounded-full bg-primary-400 animate-ping" />
                         Uploading {{ job.progress }}%
                       </span>
 
@@ -362,7 +362,7 @@ function triggerFileInput() {
 
                       <span
                         v-else-if="job.status === 'completed'"
-                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-medium text-[10px] border border-emerald-500/25"
+                        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-400 font-medium text-[10px] border border-primary-500/25"
                       >
                         <UIcon name="i-lucide-check" class="size-3 stroke-[2.5]" />
                         Completed
@@ -412,7 +412,7 @@ function triggerFileInput() {
                 <div class="flex items-center gap-1.5 shrink-0">
                   <div
                     v-if="job.status === 'completed'"
-                    class="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25"
+                    class="flex size-7 items-center justify-center rounded-lg bg-primary-500/15 text-primary-400 border border-primary-500/25"
                   >
                     <UIcon name="i-lucide-check" class="size-3.5 stroke-[2.5]" />
                   </div>
@@ -450,7 +450,7 @@ function triggerFileInput() {
                       ? 'bg-red-500'
                       : job.status === 'cancelled'
                       ? 'bg-zinc-600'
-                      : 'bg-emerald-500'
+                      : 'bg-primary-500'
                   ]"
                   :style="{ width: `${job.progress}%` }"
                 >
@@ -470,12 +470,12 @@ function triggerFileInput() {
     <template #footer>
       <div class="flex items-center justify-between w-full text-zinc-400">
         <span class="text-[11px] text-zinc-500 flex items-center gap-2">
-          <UIcon name="i-lucide-shield-check" class="size-4 text-emerald-400" />
+          <UIcon name="i-lucide-shield-check" class="size-4 text-primary-400" />
           Streamed straight to the provider — nothing is spooled on the server.
         </span>
         <button
           type="button"
-          class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-xs"
+          class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-primary-600 hover:bg-primary-500 text-white transition-all cursor-pointer shadow-xs"
           @click="filesStore.isUploadModalOpen = false"
         >
           Done / Close

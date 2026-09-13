@@ -1,8 +1,10 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'emerald',
-      neutral: 'zinc'
+      // 'brand' diturunkan dari lambang Arch; skalanya didefinisikan di
+      // app/assets/css/main.css agar Tailwind dan Nuxt UI memakai nilai sama.
+      primary: 'brand',
+      neutral: 'slate'
     }
   }
 })

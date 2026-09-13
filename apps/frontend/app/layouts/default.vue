@@ -89,11 +89,11 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
       v-model:open="isSidebarOpen"
       collapsible
       resizable
-      class="bg-[#0c0c0e]/98 backdrop-blur-2xl border-r border-white/[0.07] shadow-xl transition-all duration-200"
+      class="bg-[#0d111a]/98 backdrop-blur-2xl border-r border-white/[0.07] shadow-xl transition-all duration-200"
       :ui="{
         header: 'p-3.5 border-b border-white/[0.06]',
         body: 'p-3 space-y-4',
-        footer: 'p-2.5 border-t border-white/[0.06] bg-[#0e0e11]'
+        footer: 'p-2.5 border-t border-white/[0.06] bg-[#111621]'
       }"
     >
       <template #header="{ collapsed }">
@@ -105,7 +105,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
         <UDashboardSearchButton
           :collapsed="collapsed"
           label="Search files or modules (⌘K)..."
-          class="bg-[#141418] border border-white/[0.08] hover:border-emerald-500/40 hover:bg-[#18181d] rounded-xl text-xs py-2 shadow-xs text-zinc-300 transition-all"
+          class="bg-[#1a1f2d] border border-white/[0.08] hover:border-primary-500/40 hover:bg-[#212736] rounded-xl text-xs py-2 shadow-xs text-zinc-300 transition-all"
         />
 
         <!-- Section Label -->
@@ -118,7 +118,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
             color="primary"
             variant="subtle"
             size="xs"
-            class="text-[9px] px-1.5 py-0.5 font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            class="text-[9px] px-1.5 py-0.5 font-semibold bg-primary-500/10 text-primary-400 border border-primary-500/20"
           />
         </div>
 
@@ -140,7 +140,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
             block
             color="primary"
             variant="solid"
-            class="rounded-xl font-bold shadow-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer"
+            class="rounded-xl font-bold shadow-xs bg-primary-600 hover:bg-primary-500 text-white transition-all cursor-pointer"
             @click="filesStore.isUploadModalOpen = true"
           />
         </div>
@@ -148,14 +148,14 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
         <!-- Aggregate Storage Mini Widget -->
         <div
           v-if="!collapsed"
-          class="mt-auto rounded-2xl border border-white/[0.08] bg-[#121215] p-3 space-y-2.5 shadow-sm"
+          class="mt-auto rounded-2xl border border-white/[0.08] bg-[#151a27] p-3 space-y-2.5 shadow-sm"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-              <UIcon name="i-lucide-hard-drive" class="size-4 text-emerald-400" />
+              <UIcon name="i-lucide-hard-drive" class="size-4 text-primary-400" />
               <span class="text-xs font-bold text-zinc-200">Unified Capacity</span>
             </div>
-            <span class="text-[11px] font-bold text-emerald-400">{{ accountsStore.usagePercent }}%</span>
+            <span class="text-[11px] font-bold text-primary-400">{{ accountsStore.usagePercent }}%</span>
           </div>
 
           <UProgress :model-value="accountsStore.usagePercent" color="primary" size="sm" />
@@ -196,7 +196,7 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
     <UDashboardSearch :groups="searchGroups" />
 
     <!-- Main Content Area: Pure Matte Deep Black -->
-    <div class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#09090b]">
+    <div class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#0b0e14]">
       <slot />
     </div>
 

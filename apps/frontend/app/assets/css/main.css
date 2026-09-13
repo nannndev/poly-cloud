@@ -7,21 +7,45 @@
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/*
+  Palet merek (docs/logo/README.md). Lambang Arch memakai indigo #3D4EE0 dengan
+  periwinkle #8F9BF5 sebagai nada kedua, dan latar app icon gelapnya #1E2430 —
+  hitam kebiruan, bukan hitam netral. Permukaan di bawah ini mengikuti rona itu
+  supaya lambangnya duduk di atas latar yang sekeluarga dengannya, bukan
+  mengambang di atas abu-abu netral.
+
+  Skala `brand` ditulis penuh agar tersedia sebagai kelas Tailwind (bg-brand-500
+  dsb.) sekaligus jadi sumber warna primary Nuxt UI lewat app.config.ts.
+*/
+@theme static {
+  --color-brand-50: #eef0fe;
+  --color-brand-100: #dfe3fd;
+  --color-brand-200: #c4cbfa;
+  --color-brand-300: #a8b3f7;
+  --color-brand-400: #8f9bf5;
+  --color-brand-500: #6b7bef;
+  --color-brand-600: #3d4ee0;
+  --color-brand-700: #2f3cb8;
+  --color-brand-800: #273191;
+  --color-brand-900: #232c73;
+  --color-brand-950: #171d4a;
+}
+
 :root,
 .dark {
-  /* Elegant matte deep black (hitam doff pekat) with soft green accents */
-  --ui-bg: #09090b;
-  --ui-bg-muted: #0d0d10;
-  --ui-bg-elevated: #151518;
-  --ui-bg-accented: #1a1a1f;
-  --ui-bg-card: #111114;
+  /* Permukaan gelap bernuansa biru, seturut latar app icon #1E2430. */
+  --ui-bg: #0b0e14;
+  --ui-bg-muted: #10141d;
+  --ui-bg-elevated: #1a1f2b;
+  --ui-bg-accented: #212736;
+  --ui-bg-card: #141925;
   --ui-border: rgba(255, 255, 255, 0.08);
-  --ui-border-accented: rgba(16, 185, 129, 0.35);
+  --ui-border-accented: rgba(143, 155, 245, 0.35);
   --ui-border-muted: rgba(255, 255, 255, 0.05);
-  --ui-text: #f4f4f5;
+  --ui-text: #f1f3f9;
   --ui-text-highlighted: #ffffff;
-  --ui-text-muted: #a1a1aa;
-  --ui-text-dimmed: #71717a;
+  --ui-text-muted: #a8b0bf;
+  --ui-text-dimmed: #717a8c;
 }
 
 /* Route transitions: fluid and ultra-smooth */
@@ -43,7 +67,7 @@
 
 /* Glassmorphism & premium UI helpers */
 .glass-panel {
-  background: rgba(18, 18, 22, 0.85);
+  background: rgba(20, 25, 37, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -57,8 +81,8 @@
 }
 
 /* Subtle soft glow utilities */
-.glow-soft-emerald {
-  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.18);
+.glow-soft-brand {
+  box-shadow: 0 0 20px -3px rgba(143, 155, 245, 0.18);
 }
 
 /* Custom sleek scrollbars */

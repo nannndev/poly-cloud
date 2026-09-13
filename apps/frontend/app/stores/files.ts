@@ -453,7 +453,7 @@ export const useFilesStore = defineStore('files', () => {
     const jobId = randomId()
     const folder = targetFolderId ? folders.value.find(f => f.id === targetFolderId) : null
 
-    const job: UploadJob = {
+    uploadJobs.value = [{
       id: jobId,
       file_name: file.name,
       size_bytes: file.size,
@@ -462,8 +462,14 @@ export const useFilesStore = defineStore('files', () => {
       status: 'routing',
       target_folder_id: targetFolderId,
       target_folder_path: folder?.path || '/'
-    }
-    uploadJobs.value = [job, ...uploadJobs.value]
+    }, ...uploadJobs.value]
+
+    // Ambil kembali entri dari ref supaya yang dimutasi adalah proxy reaktifnya,
+    // bukan objek mentah yang tadi dibuat. Memutasi objek mentah tak terpantau
+    // Vue: kartu upload membeku di "uploading" sampai sesuatu yang lain memicu
+    // render — persis kenapa job sebelumnya baru tampak selesai saat file
+    // berikutnya diunggah.
+    const job = uploadJobs.value.find(j => j.id === jobId)!
 
     const events = subscribeUploadProgress(jobId, job)
     const controller = new AbortController()
