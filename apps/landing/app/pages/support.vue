@@ -11,8 +11,11 @@ useSeoMeta({
   ogDescription: description
 })
 
-const global = DONATIONS.filter(d => d.region === 'global')
-const indonesia = DONATIONS.filter(d => d.region === 'id')
+// Hanya kanal yang akunnya sudah ada. Menampilkan tautan donasi yang mati lebih
+// buruk daripada tak menampilkannya sama sekali.
+const active = DONATIONS.filter(d => d.enabled)
+const global = active.filter(d => d.region === 'global')
+const indonesia = active.filter(d => d.region === 'id')
 
 /**
  * Menyumbang bukan satu-satunya cara membantu, dan bagi sebagian orang bukan
