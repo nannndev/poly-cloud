@@ -1,12 +1,5 @@
 <script setup lang="ts">
-interface BackendSettings {
-  routing_strategy: string
-  remote_base_dir: string
-  storage_model: string
-  chunking: boolean
-  sync_recurse: boolean
-  multi_user: boolean
-}
+import type { BackendSettings } from '~/types'
 
 const config = useRuntimeConfig()
 const accountsStore = useAccountsStore()

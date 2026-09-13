@@ -23,7 +23,7 @@ Mode awal: CLI subprocess; bisa pindah library mode tanpa ubah pemanggil.
 **Konteks:** Butuh I/O streaming efisien di backend; frontend selaras stack existing.
 **Keputusan:** Go (backend) + Nuxt 4 (frontend).
 **Konsekuensi:** (+) Go kuat untuk stream & subprocess rclone (Go-native); Nuxt sesuai
-keahlian tim. (−) dua bahasa dalam satu repo → dijembatani `shared-types`.
+keahlian tim. (−) dua bahasa dalam satu repo → kontrak API dijaga manual: struct Go jadi otoritas, `apps/frontend/app/types/index.ts` salinannya (lihat docs/02 §4).
 
 ## ADR-004 — Monorepo
 **Konteks:** Solo dev, backend & frontend berbagi kontrak API, target deploy satu unit.

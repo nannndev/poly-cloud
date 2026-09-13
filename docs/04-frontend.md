@@ -65,7 +65,7 @@ menampilkan pesan mentah.
 - **Search:** ketik → debounce → backend (query DB) → render hasil lintas account.
 
 ## 6. Kontrak Tipe
-`app/types/index.ts` mencerminkan `packages/shared-types/types.ts`
+`app/types/index.ts` mencerminkan struct Go di `apps/backend`
 (`FileEntry`, `Account`, `Quota`, response API). Jaga sinkron dengan Go structs
 (lihat [02 §4](02-repo-structure.md)).
 

@@ -1,7 +1,7 @@
 # 02 — Repository Structure
 
 ## 1. Keputusan: Monorepo
-Backend (Go), frontend (Nuxt 4), shared types, docs, dan deploy config berada dalam satu repo.
+Backend (Go), frontend (Nuxt 4), landing page, docs, dan deploy config berada dalam satu repo.
 Alasan lengkap ada di [ADR-004](08-adr.md#adr-004--monorepo). Ringkas:
 - Solo dev → hindari overhead sinkron antar-repo.
 - Backend & frontend berbagi kontrak API → satu perubahan, satu PR, tak drift.
@@ -38,10 +38,6 @@ storage-platform/
 │       ├── nuxt.config.ts
 │       ├── vercel.json
 │       └── package.json
-├── packages/
-│   └── shared-types/             # kontrak tipe (sumber kebenaran API)
-│       ├── types.ts              # TS untuk frontend
-│       └── README.md             # cara sinkron dgn Go structs
 ├── docs/                         # dokumen ini
 ├── docker-compose.yml            # backend + frontend + postgres
 ├── .env.example
@@ -55,15 +51,23 @@ storage-platform/
 | `apps/backend` | logika bisnis, DB, engine, API | logika presentasi |
 | `apps/frontend` | UI, state, panggil API | akses DB / provider langsung |
 | `apps/landing` | halaman publik, konten statis | panggil API backend, simpan rahasia |
-| `packages/shared-types` | definisi kontrak | logika runtime |
 | `docs` | desain & keputusan | kode |
 
 ## 4. Shared Contract (anti-drift)
-Kontrak API adalah sumber kebenaran tunggal. Alur menjaga sinkron:
-1. Go structs (backend) = otoritas bentuk data.
-2. `packages/shared-types/types.ts` = cerminan TS-nya untuk frontend.
-3. Saat API berubah: update Go struct → update `types.ts` → di satu PR yang sama.
-   (Opsional lanjut: generate `types.ts` otomatis dari OpenAPI/Go — lihat ADR jika diadopsi.)
+Kontrak API punya satu otoritas: **struct Go di backend**. Bentuk respons
+ditentukan di sana, dan tak ada tempat lain yang boleh mendahuluinya.
+
+`apps/frontend/app/types/index.ts` adalah salinan TS-nya. Saat bentuk API
+berubah: ubah struct Go → ubah berkas tipe frontend → dalam PR yang sama.
+
+Paket `packages/shared-types` pernah ada untuk peran ini, tapi dihapus: repo ini
+bukan npm workspace, jadi paket itu tak pernah bisa diimpor siapa pun. Frontend
+sejak awal memakai salinannya sendiri, dan keduanya sempat menyimpang tanpa
+ketahuan — persis kegagalan yang hendak dicegah bagian ini. Satu salinan yang
+jujur lebih aman daripada dua yang salah satunya pura-pura jadi sumber kebenaran.
+
+Bila nanti konsumen tipe bertambah (mis. CLI atau SDK), pertimbangkan
+men-generate tipe dari OpenAPI — bukan menyalinnya lagi secara manual.
 
 ## 5. Tooling
 - **Task runner:** `Makefile` di root — `make dev`, `build`, `down`, `logs`,

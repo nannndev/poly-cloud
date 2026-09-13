@@ -1,5 +1,7 @@
 // Kontrak API — cerminan Go structs di apps/backend.
-// Sumber kebenaran: packages/shared-types/types.ts (lihat docs/02 §4).
+//
+// Sumber kebenarannya adalah struct Go itu sendiri; berkas ini salinannya untuk
+// frontend. Saat bentuk respons API berubah, ubah keduanya dalam satu PR.
 
 export type AccountStatus = 'active' | 'needs_reconnect' | 'error' | 'syncing'
 
@@ -131,4 +133,18 @@ export interface ApiErrorBody {
     code: ApiErrorCode
     message: string
   }
+}
+
+/**
+ * GET /settings — konfigurasi runtime backend, dibaca dari environment saat
+ * proses start. Ditampilkan halaman Settings, bukan disunting dari sana.
+ */
+export interface BackendSettings {
+  routing_strategy: string
+  remote_base_dir: string
+  /** 'A' = whole-file. Model B (chunked) belum diimplementasikan. */
+  storage_model: string
+  chunking: boolean
+  sync_recurse: boolean
+  multi_user: boolean
 }
