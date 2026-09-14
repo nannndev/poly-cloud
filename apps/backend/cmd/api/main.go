@@ -80,8 +80,8 @@ func run() error {
 	accounts := storage.NewAccountService(deps)
 	hub := httpapi.NewHub()
 
-	api := httpapi.NewAPI(cfg, files, accounts, store.Folders(), hub, log)
-	handler := httpapi.NewRouter(cfg, api, hub, httpapi.Health{
+	api := httpapi.NewAPI(cfg, files, accounts, store.Folders(), store.Keys(), hub, log)
+	handler := httpapi.NewRouter(cfg, api, hub, store.Keys(), httpapi.Health{
 		DB: func() error {
 			pctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()

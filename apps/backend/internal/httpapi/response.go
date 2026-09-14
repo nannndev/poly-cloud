@@ -34,6 +34,8 @@ func writeError(w http.ResponseWriter, log *slog.Logger, err error) {
 	switch {
 	case errors.Is(err, domain.ErrNoRoom):
 		status, code = http.StatusConflict, "NO_ROOM"
+	case errors.Is(err, domain.ErrUnauthorized):
+		status, code = http.StatusUnauthorized, "UNAUTHORIZED"
 	case errors.Is(err, domain.ErrNeedsReconnect):
 		status, code = http.StatusUnauthorized, "ACCOUNT_NEEDS_RECONNECT"
 	case errors.Is(err, domain.ErrNotFound):

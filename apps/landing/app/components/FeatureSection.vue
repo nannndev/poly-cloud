@@ -25,6 +25,11 @@ const features = [
     title: 'Search across accounts',
     body: 'File metadata is indexed in the database, so search answers without waiting on any provider.',
     icon: 'search'
+  },
+  {
+    title: 'Model Context Protocol (MCP)',
+    body: 'Connect AI agents (Claude Desktop, Cursor, Antigravity) natively to search, read, and manage your multi-cloud files.',
+    icon: 'bot'
   }
 ]
 </script>
@@ -36,14 +41,12 @@ const features = [
         What Poly Cloud does for you
       </h2>
 
-      <!-- Lima butir dalam susunan asimetris: dua kartu lebar di baris pertama,
-           tiga kartu sempit di baris kedua. Jumlah sel persis sama dengan isi. -->
-      <div class="mt-12 grid gap-4 lg:grid-cols-6">
+      <!-- Enam kapabilitas utama dalam susunan grid 3 kolom yang seimbang -->
+      <div class="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <article
           v-for="(f, i) in features"
           :key="f.title"
           class="reveal rounded-2xl border border-white/[0.08] bg-ink-850 p-6 transition-colors hover:border-accent-500/30"
-          :class="i < 2 ? 'lg:col-span-3' : 'lg:col-span-2'"
           :style="{ transitionDelay: `${i * 60}ms` }"
         >
           <span class="grid size-9 place-items-center rounded-xl border border-white/[0.07] bg-ink-800 text-accent-400">
@@ -61,6 +64,13 @@ const features = [
               <template v-else-if="f.icon === 'lock'">
                 <rect x="4.5" y="10.5" width="15" height="9.5" rx="2" />
                 <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+              </template>
+              <template v-else-if="f.icon === 'bot'">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <circle cx="12" cy="5" r="2" />
+                <path d="M12 7v4" />
+                <line x1="8" y1="16" x2="8" y2="16.01" stroke-width="2.5" />
+                <line x1="16" y1="16" x2="16" y2="16.01" stroke-width="2.5" />
               </template>
               <template v-else>
                 <circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" />

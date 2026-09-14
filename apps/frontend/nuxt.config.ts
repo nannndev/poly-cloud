@@ -22,6 +22,12 @@ export default defineNuxtConfig({
     }
   },
 
+  colorMode: {
+    preference: 'system',
+    fallback: 'dark',
+    classSuffix: ''
+  },
+
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },
     layoutTransition: false

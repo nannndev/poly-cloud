@@ -46,6 +46,11 @@ type Config struct {
 	DefaultUserID    string
 	DefaultUserEmail string
 
+	AdminEmail    string
+	AdminPassword string
+	AuthRequired  bool
+	SessionSecret [32]byte
+
 	CORSOrigins []string
 
 	// OAuthApps di-key provider ('gdrive'|'dropbox'|'onedrive').
@@ -69,6 +74,9 @@ func Load() (*Config, error) {
 		RoutingStrategy:  env("ROUTING_STRATEGY", "most-free"),
 		DefaultUserID:    env("DEFAULT_USER_ID", DefaultUserID),
 		DefaultUserEmail: env("DEFAULT_USER_EMAIL", "owner@polycloud.local"),
+		AdminEmail:       env("ADMIN_EMAIL", "admin@polycloud.local"),
+		AdminPassword:    env("ADMIN_PASSWORD", "admin123"),
+		AuthRequired:     envBool("AUTH_REQUIRED", true),
 		CORSOrigins:      splitList(env("CORS_ORIGINS", "http://localhost:3000")),
 		SyncRecurse:      envBool("SYNC_RECURSE", true),
 		OAuthApps: map[string]OAuthApp{
@@ -86,6 +94,13 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("TOKEN_ENC_KEY wajib diisi (minimal 16 karakter)")
 	}
 	c.TokenEncKey = sha256.Sum256([]byte(secret))
+
+	sessionSecretStr := env("SESSION_SECRET", "")
+	if len(sessionSecretStr) >= 16 {
+		c.SessionSecret = sha256.Sum256([]byte(sessionSecretStr))
+	} else {
+		c.SessionSecret = c.TokenEncKey
+	}
 
 	return c, nil
 }

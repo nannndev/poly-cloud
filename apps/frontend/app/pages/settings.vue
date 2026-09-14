@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BackendSettings } from '~/types'
+import type { BackendSettings, ApiKey, CreatedApiKey } from '~/types'
 
 const config = useRuntimeConfig()
 const accountsStore = useAccountsStore()
@@ -65,10 +65,153 @@ const activeStrategy = computed(() => {
   return { key, ...(strategyMeta[key] || { label: key, desc: 'Custom strategy.' }) }
 })
 
+// MCP & AI Assistant Integration state
+const mcpTab = ref<'claude' | 'cursor' | 'http'>('claude')
+const mcpCopied = ref(false)
+
+const mcpClaudeConfig = computed(() => JSON.stringify({
+  mcpServers: {
+    "poly-cloud": {
+      command: "go",
+      args: ["run", "./apps/backend/cmd/mcp"],
+      env: {
+        POLYCLOUD_API_URL: apiBase.value || "http://localhost:8080"
+      }
+    }
+  }
+}, null, 2))
+
+const mcpCursorEnv = computed(() => `POLYCLOUD_API_URL=${apiBase.value || 'http://localhost:8080'}`)
+const mcpEndpointUrl = computed(() => `${apiBase.value || 'http://localhost:8080'}/mcp`)
+
+async function copyMcpConfig(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    mcpCopied.value = true
+    toast.add({
+      title: 'Copied to clipboard',
+      description: 'MCP configuration is ready to paste into your AI assistant.',
+      color: 'success'
+    })
+    setTimeout(() => { mcpCopied.value = false }, 2000)
+  } catch {
+    // fallback
+  }
+}
+
+const mcpTools = [
+  { name: 'search_files', desc: 'Instant search across all clouds via PostgreSQL index', icon: 'i-lucide-search' },
+  { name: 'list_files', desc: 'Explore virtual folders and indexed files in any directory', icon: 'i-lucide-folder-tree' },
+  { name: 'read_file', desc: 'Download & stream file content directly into model context', icon: 'i-lucide-file-text' },
+  { name: 'upload_file', desc: 'Auto-routed cloud upload to whichever account is emptiest', icon: 'i-lucide-upload-cloud' },
+  { name: 'get_storage_quota', desc: 'Inspect live capacity breakdown across all cloud providers', icon: 'i-lucide-pie-chart' },
+  { name: 'list_accounts', desc: 'Check connected cloud provider remotes and statuses', icon: 'i-lucide-cloud-cog' },
+  { name: 'create_folder', desc: 'Create new virtual directories in the unified namespace', icon: 'i-lucide-folder-plus' },
+  { name: 'delete_file', desc: 'Remove obsolete files from cloud storage safely', icon: 'i-lucide-trash-2' }
+]
+
+// Developer API Keys State
+const apiKeys = ref<ApiKey[]>([])
+const isLoadingKeys = ref(false)
+const isCreateKeyOpen = ref(false)
+const isSecretRevealOpen = ref(false)
+const isSubmittingKey = ref(false)
+const newKeyName = ref('')
+const newKeyScopes = ref<string[]>(['read', 'write'])
+const createdSecretKey = ref<CreatedApiKey | null>(null)
+const copiedSecret = ref(false)
+const deletingKeyId = ref<string | null>(null)
+
+async function loadApiKeys() {
+  isLoadingKeys.value = true
+  try {
+    const res = await api.get<ApiKey[]>('/api-keys')
+    apiKeys.value = res || []
+  } catch {
+    apiKeys.value = []
+  } finally {
+    isLoadingKeys.value = false
+  }
+}
+
+async function handleCreateKey() {
+  if (!newKeyName.value.trim()) return
+  isSubmittingKey.value = true
+  try {
+    const res = await api.post<CreatedApiKey>('/api-keys', {
+      name: newKeyName.value.trim(),
+      scopes: newKeyScopes.value
+    })
+    createdSecretKey.value = res
+    isCreateKeyOpen.value = false
+    newKeyName.value = ''
+    newKeyScopes.value = ['read', 'write']
+    isSecretRevealOpen.value = true
+    await loadApiKeys()
+    toast.add({
+      title: 'API Key Created',
+      description: `Key "${res.name}" is ready for use.`,
+      color: 'success'
+    })
+  } catch (err: any) {
+    toast.add({
+      title: 'Failed to create key',
+      description: err?.message || 'Error occurred while creating key',
+      color: 'error'
+    })
+  } finally {
+    isSubmittingKey.value = false
+  }
+}
+
+async function handleDeleteKey(key: ApiKey) {
+  deletingKeyId.value = key.id
+  try {
+    await api.del(`/api-keys/${key.id}`)
+    apiKeys.value = apiKeys.value.filter(k => k.id !== key.id)
+    toast.add({
+      title: 'API Key Revoked',
+      description: `"${key.name}" has been revoked permanently.`,
+      color: 'success'
+    })
+  } catch (err: any) {
+    toast.add({
+      title: 'Failed to revoke key',
+      description: err?.message || 'Error occurred while revoking key',
+      color: 'error'
+    })
+  } finally {
+    deletingKeyId.value = null
+  }
+}
+
+async function copySecretKey() {
+  if (!createdSecretKey.value?.key) return
+  try {
+    await navigator.clipboard.writeText(createdSecretKey.value.key)
+    copiedSecret.value = true
+    toast.add({
+      title: 'Secret Key Copied',
+      description: 'API key copied to clipboard.',
+      color: 'success'
+    })
+    setTimeout(() => { copiedSecret.value = false }, 2000)
+  } catch {
+    // fallback
+  }
+}
+
+function formatDate(iso: string | null) {
+  if (!iso) return 'Never'
+  const d = new Date(iso)
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 await useAsyncData('settings-page', async () => {
   await Promise.all([
     accountsStore.loadAll().catch(() => null),
     api.get<BackendSettings>('/settings').then(res => { settings.value = res }).catch(() => null),
+    loadApiKeys().catch(() => null),
     testBackend()
   ])
   return true
@@ -248,6 +391,251 @@ await useAsyncData('settings-page', async () => {
             </div>
           </div>
 
+          <!-- Row: Model Context Protocol (MCP) & AI Integration -->
+          <div class="p-6 rounded-3xl border border-default/80 bg-card shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-default/60">
+              <div class="flex items-start gap-3.5">
+                <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                  <UIcon name="i-lucide-bot" class="size-6" />
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-sm text-highlighted">
+                      Model Context Protocol (MCP) Server
+                    </h3>
+                    <UBadge
+                      label="AI Agent Ready"
+                      color="primary"
+                      variant="subtle"
+                      size="xs"
+                      class="rounded-lg font-mono text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                    />
+                  </div>
+                  <p class="text-xs text-muted mt-0.5 leading-relaxed max-w-2xl">
+                    Connect Claude Desktop, Cursor, Antigravity, or custom agents directly to Poly Cloud. AI models can search, read, and write files across all your connected clouds via 1 standard protocol.
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-2 px-3 py-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                  <span class="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>JSON-RPC 2.0 Ready</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Client Config Tabs & Code Snippet -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div class="lg:col-span-7 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 p-1 rounded-xl bg-elevated/40 border border-default/60 text-xs">
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer"
+                      :class="mcpTab === 'claude' ? 'bg-primary-500 text-white font-semibold shadow-xs' : 'text-muted hover:text-highlighted'"
+                      @click="mcpTab = 'claude'"
+                    >
+                      Claude Desktop
+                    </button>
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer"
+                      :class="mcpTab === 'cursor' ? 'bg-primary-500 text-white font-semibold shadow-xs' : 'text-muted hover:text-highlighted'"
+                      @click="mcpTab = 'cursor'"
+                    >
+                      Cursor IDE
+                    </button>
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer"
+                      :class="mcpTab === 'http' ? 'bg-primary-500 text-white font-semibold shadow-xs' : 'text-muted hover:text-highlighted'"
+                      @click="mcpTab = 'http'"
+                    >
+                      HTTP Endpoint
+                    </button>
+                  </div>
+
+                  <UButton
+                    :label="mcpCopied ? 'Copied' : 'Copy Config'"
+                    :icon="mcpCopied ? 'i-lucide-check' : 'i-lucide-copy'"
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    class="rounded-xl font-semibold cursor-pointer"
+                    @click="copyMcpConfig(mcpTab === 'claude' ? mcpClaudeConfig : mcpTab === 'cursor' ? mcpCursorEnv : mcpEndpointUrl)"
+                  />
+                </div>
+
+                <!-- Claude Tab -->
+                <div v-if="mcpTab === 'claude'" class="space-y-2">
+                  <div class="p-4 rounded-2xl border border-default/70 bg-[#0d111a] font-mono text-[12px] leading-relaxed text-zinc-300 overflow-x-auto">
+                    <pre><code>{{ mcpClaudeConfig }}</code></pre>
+                  </div>
+                  <p class="text-[11px] text-muted">
+                    Paste this snippet into your <code class="font-mono text-highlighted">claude_desktop_config.json</code> under <code class="font-mono">mcpServers</code>.
+                  </p>
+                </div>
+
+                <!-- Cursor Tab -->
+                <div v-if="mcpTab === 'cursor'" class="space-y-3">
+                  <div class="p-4 rounded-2xl border border-default/70 bg-[#0d111a] space-y-3">
+                    <div>
+                      <span class="text-[11px] text-muted block mb-1">Command</span>
+                      <code class="block font-mono text-[12px] text-primary-400 bg-black/40 p-2 rounded-lg">go run ./apps/backend/cmd/mcp</code>
+                    </div>
+                    <div>
+                      <span class="text-[11px] text-muted block mb-1">Environment</span>
+                      <code class="block font-mono text-[12px] text-emerald-400 bg-black/40 p-2 rounded-lg">{{ mcpCursorEnv }}</code>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-muted">
+                    Add in Cursor Settings &rarr; Features &rarr; MCP &rarr; Add New MCP Server.
+                  </p>
+                </div>
+
+                <!-- HTTP Tab -->
+                <div v-if="mcpTab === 'http'" class="space-y-2">
+                  <div class="p-4 rounded-2xl border border-default/70 bg-[#0d111a] space-y-2">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded bg-primary-500/20 text-primary-400 font-mono text-[10px] font-bold">POST</span>
+                      <code class="font-mono text-[12px] text-highlighted">{{ mcpEndpointUrl }}</code>
+                    </div>
+                    <p class="text-[11px] text-muted leading-relaxed">
+                      Standard JSON-RPC 2.0 endpoint for remote agents or containerized AI assistants.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Exposed MCP Tools List (5 Cols) -->
+              <div class="lg:col-span-5 space-y-2.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-muted block">
+                  8 Available AI Tools
+                </span>
+                <div class="grid grid-cols-1 gap-2">
+                  <div
+                    v-for="tool in mcpTools"
+                    :key="tool.name"
+                    class="p-2.5 rounded-xl border border-default/60 bg-elevated/20 flex items-start gap-2.5"
+                  >
+                    <div class="p-1.5 rounded-lg bg-primary-500/10 text-primary-400 border border-primary-500/20 shrink-0">
+                      <UIcon :name="tool.icon" class="size-3.5" />
+                    </div>
+                    <div class="min-w-0">
+                      <div class="font-mono font-bold text-xs text-highlighted truncate">{{ tool.name }}</div>
+                      <p class="text-[11px] text-muted line-clamp-1 leading-snug">{{ tool.desc }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row: Developer API Keys (Personal Access Tokens) -->
+          <div class="p-6 rounded-3xl border border-default/80 bg-card shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-default/60">
+              <div class="flex items-start gap-3.5">
+                <div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <UIcon name="i-lucide-key" class="size-6" />
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-sm text-highlighted">
+                      Developer API Keys
+                    </h3>
+                    <UBadge
+                      label="REST & MCP Gateway"
+                      color="warning"
+                      variant="subtle"
+                      size="xs"
+                      class="rounded-lg font-mono text-[10px]"
+                    />
+                  </div>
+                  <p class="text-xs text-muted mt-0.5 leading-relaxed max-w-2xl">
+                    Generate personal access tokens to authenticate external scripts, CLI utilities, and autonomous AI agents using <code class="font-mono text-highlighted">Authorization: Bearer &lt;key&gt;</code>.
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <UButton
+                  label="Generate New Key"
+                  icon="i-lucide-plus"
+                  color="primary"
+                  class="rounded-xl text-xs font-bold"
+                  @click="isCreateKeyOpen = true"
+                />
+              </div>
+            </div>
+
+            <!-- Active Keys Table / Empty State -->
+            <div v-if="apiKeys.length === 0" class="p-8 rounded-2xl border border-dashed border-default/80 bg-elevated/10 text-center space-y-2">
+              <div class="size-10 rounded-full bg-default/10 text-muted mx-auto flex items-center justify-center">
+                <UIcon name="i-lucide-key-round" class="size-5" />
+              </div>
+              <p class="text-xs font-medium text-highlighted">No Developer API Keys</p>
+              <p class="text-[11px] text-muted max-w-sm mx-auto">
+                You haven't generated any API tokens yet. Create one to use Poly Cloud programmatically from your own tools.
+              </p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="k in apiKeys"
+                :key="k.id"
+                class="p-4 rounded-2xl border border-default/70 bg-elevated/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-default transition-colors"
+              >
+                <div class="space-y-1.5 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-xs text-highlighted truncate">{{ k.name }}</span>
+                    <code class="font-mono text-[11px] text-primary-400 bg-black/40 px-2 py-0.5 rounded-lg border border-white/[0.04]">
+                      {{ k.key_prefix }}
+                    </code>
+                    <div class="flex items-center gap-1">
+                      <UBadge
+                        v-for="s in k.scopes"
+                        :key="s"
+                        :label="s"
+                        color="neutral"
+                        variant="subtle"
+                        size="xs"
+                        class="rounded-md font-mono text-[9px] uppercase"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4 text-[11px] text-muted font-mono">
+                    <span>Created: {{ formatDate(k.created_at) }}</span>
+                    <span>Last used: <strong :class="k.last_used_at ? 'text-emerald-400' : 'text-muted'">{{ formatDate(k.last_used_at) }}</strong></span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <UButton
+                    label="Revoke"
+                    icon="i-lucide-trash-2"
+                    color="error"
+                    variant="ghost"
+                    size="xs"
+                    class="rounded-xl text-[11px]"
+                    :loading="deletingKeyId === k.id"
+                    @click="handleDeleteKey(k)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Example Snippet Box -->
+            <div class="p-4 rounded-2xl border border-default/60 bg-black/40 space-y-2 font-mono text-xs">
+              <div class="flex items-center justify-between text-muted text-[11px]">
+                <span>Example: Accessing REST API with Bearer Token</span>
+                <span class="text-primary-400">cURL</span>
+              </div>
+              <pre class="overflow-x-auto text-zinc-300 p-2 rounded-lg bg-black/50 border border-white/[0.04]"><code>curl http://localhost:8080/api/v1/files \
+  -H "Authorization: Bearer plc_live_..."</code></pre>
+            </div>
+          </div>
+
           <!-- Backend runtime config: displayed, not editable -->
           <div class="p-6 rounded-3xl border border-default/80 bg-card shadow-sm space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -362,5 +750,145 @@ await useAsyncData('settings-page', async () => {
         </div>
       </template>
     </UDashboardPanel>
+
+    <!-- Modal: Generate API Key -->
+    <UModal
+      v-model:open="isCreateKeyOpen"
+      :ui="{
+        content: 'sm:max-w-md bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold flex items-center gap-2 text-white">
+            <UIcon name="i-lucide-key" class="size-5 text-amber-400" />
+            Generate Developer API Key
+          </h3>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-zinc-300">Key Name</label>
+            <UInput
+              v-model="newKeyName"
+              placeholder="e.g. Cursor AI Assistant / Backup Script"
+              class="w-full"
+              autofocus
+              @keydown.enter="handleCreateKey"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-zinc-300 block">Permissions / Scopes</label>
+            <div class="flex items-center gap-4 text-xs text-zinc-300">
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  value="read"
+                  checked
+                  disabled
+                  class="rounded bg-black/40 border-white/20 text-primary-500 focus:ring-0"
+                >
+                <span>Read (Search, List, Download)</span>
+              </label>
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  value="write"
+                  checked
+                  disabled
+                  class="rounded bg-black/40 border-white/20 text-primary-500 focus:ring-0"
+                >
+                <span>Write (Upload, Delete, Folders)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="ghost"
+            class="rounded-xl"
+            :disabled="isSubmittingKey"
+            @click="isCreateKeyOpen = false"
+          />
+          <UButton
+            label="Generate Key"
+            color="primary"
+            class="rounded-xl font-bold"
+            :loading="isSubmittingKey"
+            :disabled="!newKeyName.trim()"
+            @click="handleCreateKey"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Modal: Reveal Generated Secret Key -->
+    <UModal
+      v-model:open="isSecretRevealOpen"
+      :ui="{
+        content: 'sm:max-w-lg bg-[#0d111a] border border-white/[0.09] rounded-3xl shadow-2xl p-0 overflow-hidden text-zinc-200',
+        body: 'p-6 space-y-4',
+        footer: 'px-6 py-4 bg-[#0b0e14] border-t border-white/[0.06]'
+      }"
+    >
+      <template #header>
+        <div class="px-6 pt-6 pb-2">
+          <h3 class="text-base font-bold flex items-center gap-2 text-emerald-400">
+            <UIcon name="i-lucide-shield-check" class="size-5" />
+            API Key Created Successfully
+          </h3>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4">
+          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2.5 leading-relaxed">
+            <UIcon name="i-lucide-alert-triangle" class="size-4 shrink-0 mt-0.5" />
+            <span>
+              <strong>Copy this token immediately!</strong> For your security, this raw key will never be shown again once you close this dialog.
+            </span>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-zinc-400">Secret Token</label>
+            <div class="flex items-center gap-2">
+              <UInput
+                :model-value="createdSecretKey?.key"
+                readonly
+                class="font-mono text-xs flex-1 text-primary-400"
+              />
+              <UButton
+                :label="copiedSecret ? 'Copied' : 'Copy'"
+                :icon="copiedSecret ? 'i-lucide-check' : 'i-lucide-copy'"
+                color="primary"
+                class="rounded-xl shrink-0 font-semibold"
+                @click="copySecretKey"
+              />
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end w-full">
+          <UButton
+            label="I Have Copied My Key"
+            color="primary"
+            class="rounded-xl font-bold"
+            @click="isSecretRevealOpen = false"
+          />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

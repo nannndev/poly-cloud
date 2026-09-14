@@ -6,27 +6,29 @@ const columns = [
     title: 'Product',
     links: [
       { label: 'How it works', to: '/#how-it-works', external: false },
-      { label: 'Providers', to: '/#providers', external: false },
-      { label: 'Architecture', to: '/#architecture', external: false },
-      { label: 'Self-host it', to: '/#install', external: false }
+      { label: 'AI & MCP Protocol', to: '/#mcp', external: false },
+      { label: 'Self-Host Tutorial', to: '/#install', external: false },
+      { label: 'Supported Providers', to: '/#providers', external: false },
+      { label: 'Zero-Knowledge Architecture', to: '/#architecture', external: false }
     ]
   },
   {
-    title: 'Project',
+    title: 'Open Source',
     links: [
+      { label: 'FOSS Manifesto', to: '/#open-source', external: false },
       { label: 'Contributors', to: '/contributors', external: false },
-      { label: 'Support', to: '/support', external: false },
+      { label: 'Support & Sponsor', to: '/support', external: false },
       { label: 'Releases', to: GITHUB.releases, external: true },
-      { label: 'License', to: GITHUB.license, external: true }
+      { label: 'MIT License', to: GITHUB.license, external: true }
     ]
   },
   {
     title: 'Community',
     links: [
-      { label: 'GitHub', to: GITHUB.repo, external: true },
-      { label: 'Issues', to: GITHUB.issues, external: true },
-      { label: 'Discussions', to: GITHUB.discussions, external: true },
-      { label: 'Contributing', to: GITHUB.contributing, external: true }
+      { label: 'GitHub Repository', to: GITHUB.repo, external: true },
+      { label: 'Issues & Bug Reports', to: GITHUB.issues, external: true },
+      { label: 'Discussions & Help', to: GITHUB.discussions, external: true },
+      { label: 'Contributing Guide', to: GITHUB.contributing, external: true }
     ]
   }
 ]

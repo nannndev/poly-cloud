@@ -19,3 +19,7 @@ test:
 
 fmt:
 	docker run --rm -v "$(CURDIR)/apps/backend":/src -w /src golang:1.25-alpine gofmt -w .
+
+# Jalankan MCP (Model Context Protocol) bridge via stdio
+mcp:
+	go run ./apps/backend/cmd/mcp

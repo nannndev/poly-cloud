@@ -54,6 +54,7 @@ func (s *Store) Pool() *pgxpool.Pool { return s.pool }
 func (s *Store) Accounts() *AccountRepo { return &AccountRepo{pool: s.pool} }
 func (s *Store) Files() *FileRepo       { return &FileRepo{pool: s.pool} }
 func (s *Store) Folders() *FolderRepo   { return &FolderRepo{pool: s.pool} }
+func (s *Store) Keys() *KeyRepo         { return &KeyRepo{pool: s.pool} }
 
 // EnsureUser membuat baris user default (mode single-user v1, doc 06).
 func (s *Store) EnsureUser(ctx context.Context, id, email string) error {
@@ -62,6 +63,29 @@ func (s *Store) EnsureUser(ctx context.Context, id, email string) error {
 		on conflict (id) do nothing`, id, email)
 	if err != nil {
 		return fmt.Errorf("ensure user: %w", err)
+	}
+	return s.EnsureSchema(ctx)
+}
+
+// EnsureSchema memastikan tabel tambahan seperti api_keys tersedia di database.
+func (s *Store) EnsureSchema(ctx context.Context) error {
+	_, err := s.pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS api_keys (
+		  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+		  user_id      uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		  name         text NOT NULL,
+		  key_prefix   text NOT NULL,
+		  key_hash     text UNIQUE NOT NULL,
+		  scopes       text[] NOT NULL DEFAULT '{"read", "write"}',
+		  last_used_at timestamptz,
+		  expires_at   timestamptz,
+		  created_at   timestamptz NOT NULL DEFAULT now()
+		);
+		CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash);
+		CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys (user_id);
+	`)
+	if err != nil {
+		return fmt.Errorf("ensure api_keys schema: %w", err)
 	}
 	return nil
 }

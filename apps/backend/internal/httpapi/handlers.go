@@ -18,6 +18,7 @@ import (
 	"github.com/polycloud/platform/apps/backend/internal/config"
 	"github.com/polycloud/platform/apps/backend/internal/domain"
 	"github.com/polycloud/platform/apps/backend/internal/index"
+	"github.com/polycloud/platform/apps/backend/internal/mcp"
 	"github.com/polycloud/platform/apps/backend/internal/storage"
 )
 
@@ -27,17 +28,30 @@ type API struct {
 	files    storage.Service
 	accounts *storage.AccountService
 	folders  *index.FolderRepo
+	keys     *index.KeyRepo
 	hub      *Hub
+	mcp      *mcp.Server
 	log      *slog.Logger
 }
 
-func NewAPI(cfg *config.Config, files storage.Service, accounts *storage.AccountService, folders *index.FolderRepo, hub *Hub, log *slog.Logger) *API {
-	return &API{cfg: cfg, files: files, accounts: accounts, folders: folders, hub: hub, log: log}
+func NewAPI(cfg *config.Config, files storage.Service, accounts *storage.AccountService, folders *index.FolderRepo, keys *index.KeyRepo, hub *Hub, log *slog.Logger) *API {
+	mcpServer := mcp.NewServer(cfg, files, accounts, folders, log)
+	return &API{cfg: cfg, files: files, accounts: accounts, folders: folders, keys: keys, hub: hub, mcp: mcpServer, log: log}
 }
 
-// userID mengembalikan pemilik request. v1 single-user: selalu user default
-// (doc 06). Saat multi-user aktif, di sinilah sesi dibaca.
-func (a *API) userID(_ *http.Request) string { return a.cfg.DefaultUserID }
+// HandleMCP melayani permintaan Model Context Protocol (MCP) lewat HTTP POST.
+func (a *API) HandleMCP(w http.ResponseWriter, r *http.Request) {
+	a.mcp.ServeHTTP(w, r)
+}
+
+// userID mengembalikan pemilik request dari context (diset oleh withAuth middleware).
+// Jika tidak ada di context, fallback ke DefaultUserID.
+func (a *API) userID(r *http.Request) string {
+	if u := UserFromContext(r.Context()); u != "" {
+		return u
+	}
+	return a.cfg.DefaultUserID
+}
 
 // ---- Accounts ----
 
@@ -474,3 +488,68 @@ func newJobID() string {
 	}
 	return hex.EncodeToString(b)
 }
+
+// ---- Developer API Keys ----
+
+func (a *API) ListAPIKeys(w http.ResponseWriter, r *http.Request) {
+	keys, err := a.keys.List(r.Context(), a.userID(r))
+	if err != nil {
+		writeError(w, a.log, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, keys)
+}
+
+type createAPIKeyRequest struct {
+	Name   string   `json:"name"`
+	Scopes []string `json:"scopes"`
+}
+
+func (a *API) CreateAPIKey(w http.ResponseWriter, r *http.Request) {
+	var req createAPIKeyRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, a.log, err)
+		return
+	}
+	if strings.TrimSpace(req.Name) == "" {
+		writeError(w, a.log, errInvalid("name tidak boleh kosong"))
+		return
+	}
+
+	gen, err := auth.GenerateAPIKey()
+	if err != nil {
+		writeError(w, a.log, err)
+		return
+	}
+
+	apiKey, err := a.keys.Create(r.Context(), a.userID(r), req.Name, gen.KeyPrefix, gen.KeyHash, req.Scopes, nil)
+	if err != nil {
+		writeError(w, a.log, err)
+		return
+	}
+
+	// Kembalikan raw key tepat satu kali (tidak pernah disimpan plaintext di DB)
+	resp := map[string]any{
+		"id":         apiKey.ID,
+		"name":       apiKey.Name,
+		"key":        gen.RawKey,
+		"key_prefix": apiKey.KeyPrefix,
+		"scopes":     apiKey.Scopes,
+		"created_at": apiKey.CreatedAt,
+	}
+	writeJSON(w, http.StatusCreated, resp)
+}
+
+func (a *API) DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, a.log, domain.ErrNotFound)
+		return
+	}
+	if err := a.keys.Delete(r.Context(), a.userID(r), id); err != nil {
+		writeError(w, a.log, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+

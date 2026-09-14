@@ -31,7 +31,22 @@
   --color-brand-950: #171d4a;
 }
 
-:root,
+:root {
+  /* Permukaan terang bersih, sejuk dan modern */
+  --ui-bg: #f8fafc;
+  --ui-bg-muted: #f1f5f9;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-accented: #e2e8f0;
+  --ui-bg-card: #ffffff;
+  --ui-border: rgba(15, 23, 42, 0.09);
+  --ui-border-accented: rgba(61, 78, 224, 0.4);
+  --ui-border-muted: rgba(15, 23, 42, 0.06);
+  --ui-text: #1e293b;
+  --ui-text-highlighted: #0f172a;
+  --ui-text-muted: #64748b;
+  --ui-text-dimmed: #94a3b8;
+}
+
 .dark {
   /* Permukaan gelap bernuansa biru, seturut latar app icon #1E2430. */
   --ui-bg: #0b0e14;
@@ -46,6 +61,137 @@
   --ui-text-highlighted: #ffffff;
   --ui-text-muted: #a8b0bf;
   --ui-text-dimmed: #717a8c;
+}
+
+/* Adaptasi Light Mode: mentransformasikan seluruh kartu, teks, border, dan widget menjadi tema terang modern */
+html:not(.dark),
+html.light {
+  color-scheme: light;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.dark {
+  color-scheme: dark;
+  background-color: #0b0e14;
+  color: #f1f3f9;
+}
+
+/* Backgrounds - Canvas & Subsurfaces */
+html:not(.dark) [class*="bg-[#0b0e14]"],
+html:not(.dark) [class*="bg-[#111621]"] {
+  background-color: #f8fafc !important;
+}
+
+/* Backgrounds - Cards & Panels */
+html:not(.dark) [class*="bg-[#0d111a]"],
+html:not(.dark) [class*="bg-[#141925]"],
+html:not(.dark) [class*="bg-[#151a27]"] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Backgrounds - Badges, Pills, Buttons, Subcards */
+html:not(.dark) [class*="bg-[#171c2a]"],
+html:not(.dark) [class*="bg-[#1a1f2b]"],
+html:not(.dark) [class*="bg-[#1a1f2d]"],
+html:not(.dark) [class*="bg-[#1b2130]"],
+html:not(.dark) [class*="bg-[#1c2231]"],
+html:not(.dark) [class*="bg-[#1f1b14]"] {
+  background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) [class*="bg-[#212736]"] {
+  background-color: #e2e8f0 !important;
+}
+
+html:not(.dark) [class*="bg-[#262d3e]"] {
+  background-color: #cbd5e1 !important;
+}
+
+/* Hovers */
+html:not(.dark) [class*="hover:bg-[#1a1f2d]"]:hover,
+html:not(.dark) [class*="hover:bg-[#171c2a]"]:hover,
+html:not(.dark) [class*="hover:bg-[#1b2130]"]:hover,
+html:not(.dark) [class*="hover:bg-[#212736]"]:hover,
+html:not(.dark) [class*="hover:bg-[#262d3e]"]:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* Light mode borders */
+html:not(.dark) [class*="border-white/"] {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+html:not(.dark) [class*="divide-white/"] > * + * {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Text - High contrast for light mode */
+html:not(.dark) [class*="text-zinc-100"],
+html:not(.dark) [class*="text-zinc-200"],
+html:not(.dark) [class*="text-zinc-300"],
+html:not(.dark) [class*="text-slate-100"],
+html:not(.dark) [class*="text-slate-200"],
+html:not(.dark) [class*="text-slate-300"] {
+  color: #0f172a !important;
+}
+
+html:not(.dark) [class*="text-zinc-400"] {
+  color: #475569 !important;
+}
+
+html:not(.dark) [class*="text-zinc-500"],
+html:not(.dark) [class*="text-zinc-600"],
+html:not(.dark) [class*="text-slate-500"] {
+  color: #64748b !important;
+}
+
+/* Headings and bold metrics that had text-white */
+html:not(.dark) h1[class*="text-white"],
+html:not(.dark) h2[class*="text-white"],
+html:not(.dark) h3[class*="text-white"],
+html:not(.dark) h4[class*="text-white"],
+html:not(.dark) span[class*="text-white"]:not([class*="bg-primary"]):not([class*="bg-primary"] *),
+html:not(.dark) p[class*="text-white"]:not([class*="bg-primary"]):not([class*="bg-primary"] *),
+html:not(.dark) div[class*="text-white"]:not([class*="bg-primary"]):not([class*="bg-primary"] *) {
+  color: #0f172a !important;
+}
+
+/* Keep primary buttons text white */
+html:not(.dark) button[class*="bg-primary"],
+html:not(.dark) [class*="bg-primary-600"],
+html:not(.dark) [class*="bg-primary-500"] {
+  color: #ffffff !important;
+}
+
+html:not(.dark) button[class*="bg-primary"] span,
+html:not(.dark) [class*="bg-primary-600"] span {
+  color: #ffffff !important;
+}
+
+/* Accent & badges in light mode */
+html:not(.dark) [class*="text-primary-400"] {
+  color: #3d4ee0 !important;
+}
+html:not(.dark) [class*="bg-primary-500/10"],
+html:not(.dark) [class*="bg-primary-500/15"] {
+  background-color: rgba(61, 78, 224, 0.1) !important;
+}
+html:not(.dark) [class*="border-primary-500/"] {
+  border-color: rgba(61, 78, 224, 0.25) !important;
+}
+
+/* Progress bars and gray blocks */
+html:not(.dark) [class*="bg-zinc-900"],
+html:not(.dark) [class*="bg-zinc-800"] {
+  background-color: #e2e8f0 !important;
+}
+
+/* Hovers on text */
+html:not(.dark) [class*="hover:text-white"]:hover,
+html:not(.dark) [class*="hover:text-zinc-200"]:hover {
+  color: #0f172a !important;
 }
 
 /* Route transitions: fluid and ultra-smooth */

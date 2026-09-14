@@ -46,25 +46,82 @@ const ways = [
 <template>
   <section id="open-source" class="border-b border-white/[0.06] scroll-mt-16">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
+      <!-- Open Source Header & Pillars -->
+      <div class="mb-14">
+        <div class="inline-flex items-center gap-2 rounded-full border border-accent-400/25 bg-accent-500/10 px-3 py-1 text-[11px] font-semibold text-accent-300">
+          <svg viewBox="0 0 24 24" class="size-3.5" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49l-.01-1.72c-2.78.62-3.37-1.37-3.37-1.37-.46-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.57 2.34 1.12 2.91.85.09-.66.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9l-.01 2.818c0 .27.18.59.69.49A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z" />
+          </svg>
+          100% Free &amp; Open Source Software (FOSS)
+        </div>
+
+        <h2 class="mt-4 text-2xl font-semibold tracking-tight text-white md:text-3xl">
+          Built in the open. Owned by nobody but you.
+        </h2>
+        <p class="mt-3 max-w-[64ch] text-[15px] leading-relaxed text-zinc-400">
+          Unlike proprietary multi-cloud sync services that charge expensive monthly subscriptions and pass your data through their private servers, Poly Cloud is completely open source under the permissive MIT license.
+        </p>
+
+        <!-- 3 Open Source Guarantees -->
+        <div class="mt-8 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-2xl border border-white/[0.08] bg-ink-850 p-5 space-y-2">
+            <div class="flex items-center gap-2 text-accent-300">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <h3 class="text-sm font-semibold text-white">Zero Vendor Lock-in</h3>
+            </div>
+            <p class="text-xs leading-relaxed text-zinc-400">
+              Permissive MIT license. Read every line of Go and Nuxt code, modify it for your homelab, or fork it anytime.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/[0.08] bg-ink-850 p-5 space-y-2">
+            <div class="flex items-center gap-2 text-accent-300">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+              <h3 class="text-sm font-semibold text-white">No Telemetry or Ads</h3>
+            </div>
+            <p class="text-xs leading-relaxed text-zinc-400">
+              Zero tracking beacons, zero third-party analytics, and no advertising scripts. Your usage belongs to you alone.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/[0.08] bg-ink-850 p-5 space-y-2">
+            <div class="flex items-center gap-2 text-accent-300">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <h3 class="text-sm font-semibold text-white">AES-256 at Rest</h3>
+            </div>
+            <p class="text-xs leading-relaxed text-zinc-400">
+              Your OAuth tokens are encrypted at-rest using AES-256-GCM. Kinds of keys that never leave your own server.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main GitHub Card & Ways to Contribute -->
       <div class="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-start lg:gap-16">
         <div>
-          <h2 class="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-            Built in the open
-          </h2>
-          <p class="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-zinc-400">
-            Every line of Poly Cloud is public: the Go API, the Nuxt interface, the database
-            schema, and the architecture decisions behind them. Read it, fork it, or change
-            what does not suit you.
+          <h3 class="text-xl font-semibold tracking-tight text-white">
+            Inspect the source code
+          </h3>
+          <p class="mt-3 max-w-[52ch] text-[14px] leading-relaxed text-zinc-400">
+            Every layer of Poly Cloud is public on GitHub: the Go REST API, the virtual file system indexer, the Nuxt 4 web app, the Docker Compose orchestration, and all architectural decisions.
           </p>
 
-          <div v-if="hasStats" class="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06] sm:grid-cols-4">
+          <div v-if="hasStats" class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.06] sm:grid-cols-4">
             <div v-for="m in metrics" :key="m.label" class="bg-ink-850 px-4 py-5 text-center">
               <p class="font-mono text-xl font-semibold text-white">{{ m.value }}</p>
               <p class="mt-1 text-[11px] uppercase tracking-[0.12em] text-zinc-500">{{ m.label }}</p>
             </div>
           </div>
 
-          <div class="mt-8 flex flex-wrap items-center gap-3">
+          <div class="mt-7 flex flex-wrap items-center gap-3">
             <a
               :href="GITHUB.repo"
               target="_blank"
@@ -90,7 +147,7 @@ const ways = [
             class="reveal rounded-2xl border border-white/[0.08] bg-ink-850 p-6 transition-colors hover:border-accent-500/30"
             :style="{ transitionDelay: `${i * 60}ms` }"
           >
-            <h3 class="text-[15px] font-semibold text-white">{{ w.title }}</h3>
+            <h4 class="text-[15px] font-semibold text-white">{{ w.title }}</h4>
             <p class="mt-2 text-sm leading-relaxed text-zinc-400">{{ w.body }}</p>
             <a
               :href="w.href"

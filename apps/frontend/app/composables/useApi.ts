@@ -28,6 +28,7 @@ const FRIENDLY: Record<ApiErrorCode, string> = {
   FOLDER_NOT_EMPTY: 'This folder is not empty. Empty it first, or delete recursively.',
   INVALID_ARGUMENT: 'That request is not valid.',
   UNSUPPORTED: 'This operation is not supported yet.',
+  UNAUTHORIZED: 'Session expired or unauthorized. Please sign in again.',
   INTERNAL: 'Something went wrong on the server.'
 }
 
@@ -48,13 +49,33 @@ export function friendlyMessage(err: unknown): string {
 export function useApi() {
   const config = useRuntimeConfig()
   const baseURL = config.public.apiBase
+  const token = useCookie<string | null>('polycloud_session')
 
   async function request<T>(path: string, opts: Parameters<typeof $fetch>[1] = {}): Promise<T> {
     try {
-      return await $fetch<T>(path, { baseURL, ...opts })
+      const headers: Record<string, string> = {
+        ...((opts.headers as Record<string, string>) || {})
+      }
+      if (token.value) {
+        headers['Authorization'] = `Bearer ${token.value}`
+      }
+
+      return await $fetch<T>(path, {
+        baseURL,
+        ...opts,
+        headers
+      })
     } catch (err: any) {
       const body = err?.data as ApiErrorBody | undefined
       const status = err?.status ?? err?.statusCode ?? 0
+
+      if (status === 401 && !path.includes('/auth/login')) {
+        token.value = null
+        if (import.meta.client) {
+          navigateTo('/login')
+        }
+      }
+
       if (body?.error?.code) {
         throw new ApiError(body.error.code, body.error.message, status)
       }

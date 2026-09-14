@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/polycloud/platform/apps/backend/internal/config"
+	"github.com/polycloud/platform/apps/backend/internal/index"
 )
 
 // Health = pemeriksa kesiapan dependensi (DB, rclone daemon).
@@ -15,7 +16,7 @@ type Health struct {
 }
 
 // NewRouter merakit seluruh rute sesuai doc 06.
-func NewRouter(cfg *config.Config, api *API, hub *Hub, health Health, log *slog.Logger) http.Handler {
+func NewRouter(cfg *config.Config, api *API, hub *Hub, keys *index.KeyRepo, health Health, log *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -66,5 +67,18 @@ func NewRouter(cfg *config.Config, api *API, hub *Hub, health Health, log *slog.
 	mux.HandleFunc("GET /api/v1/quota", api.Quota)
 	mux.HandleFunc("GET /api/v1/events/uploads/{jobId}", hub.HandleUploadEvents)
 
-	return withRecover(log, withLogging(log, withCORS(cfg.CORSOrigins, mux)))
+	// Model Context Protocol (MCP) endpoint
+	mux.HandleFunc("POST /api/v1/mcp", api.HandleMCP)
+
+	// Developer API Keys
+	mux.HandleFunc("GET /api/v1/api-keys", api.ListAPIKeys)
+	mux.HandleFunc("POST /api/v1/api-keys", api.CreateAPIKey)
+	mux.HandleFunc("DELETE /api/v1/api-keys/{id}", api.DeleteAPIKey)
+
+	// Authentication
+	mux.HandleFunc("POST /api/v1/auth/login", api.Login)
+	mux.HandleFunc("POST /api/v1/auth/logout", api.Logout)
+	mux.HandleFunc("GET /api/v1/auth/me", api.Me)
+
+	return withRecover(log, withLogging(log, withCORS(cfg.CORSOrigins, withAuth(cfg, keys, log, mux))))
 }

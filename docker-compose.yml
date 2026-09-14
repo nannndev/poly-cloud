@@ -70,6 +70,10 @@ services:
       DROPBOX_CLIENT_SECRET: ${DROPBOX_CLIENT_SECRET:-}
       ONEDRIVE_CLIENT_ID: ${ONEDRIVE_CLIENT_ID:-}
       ONEDRIVE_CLIENT_SECRET: ${ONEDRIVE_CLIENT_SECRET:-}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@polycloud.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      SESSION_SECRET: ${SESSION_SECRET:-polycloud-default-session-secret-change-in-production}
     ports:
       - "8080:8080"
     depends_on:

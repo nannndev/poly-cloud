@@ -41,6 +41,7 @@ onBeforeUnmount(() => observer?.disconnect())
       <FeatureSection />
       <ProviderSection />
       <ArchitectureSection />
+      <McpSection />
       <ScreensSection />
       <InstallSection />
       <OpenSourceSection />

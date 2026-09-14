@@ -155,6 +155,20 @@ type FileListResult struct {
 	Total int         `json:"total"`
 }
 
+// ---- Developer API Keys ----
+
+type APIKey struct {
+	ID         string     `json:"id"`
+	UserID     string     `json:"-"`
+	Name       string     `json:"name"`
+	KeyPrefix  string     `json:"key_prefix"`
+	KeyHash    string     `json:"-"`
+	Scopes     []string   `json:"scopes"`
+	LastUsedAt *time.Time `json:"last_used_at"`
+	ExpiresAt  *time.Time `json:"expires_at"`
+	CreatedAt  time.Time  `json:"created_at"`
+}
+
 // ---- Error sentinel ----
 // Dipetakan ke error code API di lapisan HTTP (doc 06 §Error Codes).
 
@@ -168,4 +182,5 @@ var (
 	ErrRateLimited     = errors.New("rate limited by provider")
 	ErrInvalidArgument = errors.New("invalid argument")
 	ErrUnsupported     = errors.New("unsupported operation")
+	ErrUnauthorized    = errors.New("unauthorized")
 )

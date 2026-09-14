@@ -6,13 +6,15 @@ const links = [
   { label: 'How it works', to: '/#how-it-works' },
   { label: 'Providers', to: '/#providers' },
   { label: 'Architecture', to: '/#architecture' },
-  { label: 'Contributors', to: '/contributors' },
+  { label: 'AI & MCP', to: '/#mcp' },
+  { label: 'Self-Host', to: '/#install' },
+  { label: 'Open Source', to: '/#open-source' },
   { label: 'Support', to: '/support' }
 ]
 
 const { data: stats } = await useRepoStats()
 
-// Menu mobil: tanpa ini, lima tautan + dua tombol tak muat di layar sempit.
+// Menu mobil: tanpa ini, tautan + dua tombol tak muat di layar sempit.
 const isOpen = ref(false)
 const route = useRoute()
 watch(() => route.fullPath, () => { isOpen.value = false })
@@ -28,7 +30,7 @@ watch(() => route.fullPath, () => { isOpen.value = false })
         <span class="text-sm font-semibold tracking-tight text-white">Poly Cloud</span>
       </NuxtLink>
 
-      <div class="hidden items-center gap-7 md:flex">
+      <div class="hidden items-center gap-6 lg:flex">
         <NuxtLink
           v-for="link in links"
           :key="link.to"
@@ -58,11 +60,11 @@ watch(() => route.fullPath, () => { isOpen.value = false })
         <NuxtLink
           to="/#install"
           class="hidden rounded-xl bg-accent-600 px-3.5 py-2 text-[13px] font-semibold text-white shadow-xs transition-all hover:bg-accent-500 active:translate-y-px sm:block"
-        >Self-host it</NuxtLink>
+        >Self-Host Tutorial</NuxtLink>
 
         <button
           type="button"
-          class="grid size-9 place-items-center rounded-xl border border-white/[0.1] bg-ink-850 text-zinc-300 transition-colors hover:text-white md:hidden"
+          class="grid size-9 place-items-center rounded-xl border border-white/[0.1] bg-ink-850 text-zinc-300 transition-colors hover:text-white lg:hidden"
           :aria-expanded="isOpen"
           aria-label="Toggle navigation menu"
           @click="isOpen = !isOpen"
@@ -75,7 +77,7 @@ watch(() => route.fullPath, () => { isOpen.value = false })
       </div>
     </nav>
 
-    <div v-if="isOpen" class="border-t border-white/[0.06] bg-ink-950 md:hidden">
+    <div v-if="isOpen" class="border-t border-white/[0.06] bg-ink-950 lg:hidden">
       <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
         <NuxtLink
           v-for="link in links"
@@ -94,7 +96,7 @@ watch(() => route.fullPath, () => { isOpen.value = false })
           <NuxtLink
             to="/#install"
             class="flex-1 rounded-xl bg-accent-600 px-3 py-2 text-center text-[13px] font-semibold text-white"
-          >Self-host it</NuxtLink>
+          >Self-Host Tutorial</NuxtLink>
         </div>
       </div>
     </div>
