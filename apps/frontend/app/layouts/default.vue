@@ -121,12 +121,12 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
         <UDashboardSearchButton
           :collapsed="collapsed"
           label="Search files or modules (⌘K)..."
-          class="bg-slate-100 dark:bg-[#1a1f2d] border border-slate-200 dark:border-white/[0.08] hover:border-primary-500/40 hover:bg-slate-200/60 dark:hover:bg-[#212736] rounded-xl text-xs py-2 shadow-xs text-slate-700 dark:text-zinc-300 transition-all"
+          class="bg-slate-100 dark:bg-[#1a1f2d] border border-slate-300/80 dark:border-white/[0.08] hover:border-primary-500/40 hover:bg-slate-200/70 dark:hover:bg-[#212736] rounded-xl text-xs py-2 shadow-xs text-slate-800 dark:text-zinc-300 transition-all"
         />
 
         <!-- Section Label -->
         <div v-if="!collapsed" class="px-1.5 pt-1 flex items-center justify-between">
-          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-500">
             Storage Control Center
           </span>
           <UBadge
@@ -145,7 +145,12 @@ const searchGroups = computed<CommandPaletteGroup<CommandPaletteItem>[]>(() => [
           orientation="vertical"
           tooltip
           popover
-          class="space-y-1"
+          class="space-y-1 font-medium"
+          :ui="{
+            link: 'text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white font-medium text-xs sm:text-sm',
+            linkLeadingIcon: 'text-slate-600 dark:text-zinc-400 group-hover:text-slate-950 dark:group-hover:text-white',
+            linkTrailingBadge: 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+          }"
         />
 
         <!-- Quick Upload Action Button -->

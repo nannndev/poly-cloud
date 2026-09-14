@@ -38,13 +38,13 @@
   --ui-bg-elevated: #ffffff;
   --ui-bg-accented: #e2e8f0;
   --ui-bg-card: #ffffff;
-  --ui-border: rgba(15, 23, 42, 0.09);
-  --ui-border-accented: rgba(61, 78, 224, 0.4);
-  --ui-border-muted: rgba(15, 23, 42, 0.06);
-  --ui-text: #1e293b;
-  --ui-text-highlighted: #0f172a;
-  --ui-text-muted: #64748b;
-  --ui-text-dimmed: #94a3b8;
+  --ui-border: rgba(15, 23, 42, 0.12);
+  --ui-border-accented: rgba(61, 78, 224, 0.5);
+  --ui-border-muted: rgba(15, 23, 42, 0.08);
+  --ui-text: #0f172a;
+  --ui-text-highlighted: #020617;
+  --ui-text-muted: #334155;
+  --ui-text-dimmed: #475569;
 }
 
 .dark {
@@ -89,6 +89,28 @@ html:not(.dark) [class*="bg-[#141925]"],
 html:not(.dark) [class*="bg-[#151a27]"] {
   background-color: #ffffff !important;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Upload Queue Cards & Status Overrides */
+html:not(.dark) [class*="bg-[#141d1c]"] {
+  background-color: #ecfdf5 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+html:not(.dark) [class*="bg-[#1e1719]"] {
+  background-color: #fef2f2 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+/* Table Headers in Light Mode */
+html:not(.dark) thead tr,
+html:not(.dark) thead [class*="bg-[#141925]"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) thead th {
+  color: #475569 !important;
 }
 
 /* Backgrounds - Badges, Pills, Buttons, Subcards */
