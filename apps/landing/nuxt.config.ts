@@ -7,6 +7,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: false },
 
+  modules: ['@vercel/analytics/nuxt'],
+
   css: ['~/assets/css/main.css'],
 
   vite: {
